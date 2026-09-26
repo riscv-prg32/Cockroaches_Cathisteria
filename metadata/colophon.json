@@ -1,0 +1,30 @@
+{
+  "abi": "prg32-colophon-1.0",
+  "title": "Cockroaches Cathisteria",
+  "subtitle": "Fed, her cats, and the end of the world in the basement",
+  "version": "1.0.0",
+  "release_date": "2026-09-26",
+  "developer": {
+    "name": "UniParthenope PRG32",
+    "url": "https://github.com/riscv-prg32/Cockroaches_Cathisteria"
+  },
+  "authors": [
+    {"role": "concept, academic supervisor / project lead", "name": "Raffaele Montella - UniParthenope"},
+    {"role": "implementation and procedural pixel art", "name": "Claude Code (Anthropic)"}
+  ],
+  "license": "MIT",
+  "copyright": "Copyright 2026 PRG32",
+  "acknowledgements": [
+    "A Doom-inspired game written from scratch: no names, art, sounds or levels from commercial games.",
+    "The 8x8 font is the PRG32 firmware font."
+  ],
+  "controls": [
+    {"input": "UP / DOWN", "action": "Walk forward / back"},
+    {"input": "LEFT / RIGHT", "action": "Turn"},
+    {"input": "SELECT + LEFT / RIGHT", "action": "Strafe"},
+    {"input": "A", "action": "Send a cat at the enemy in the crosshair (hold to repeat)"},
+    {"input": "B (hold)", "action": "Feline shield"},
+    {"input": "SELECT", "action": "Pause"}
+  ],
+  "start_prompt": "Press A to send the cats"
+}

@@ -1,0 +1,40 @@
+; Level 7 - attic corridor, guest bedroom, bathroom and storage.
+key: THIRD_FLOOR
+name: THIRD FLOOR
+place: GUEST ROOM AND BATH
+intro: CLEAR THE HALL TO OPEN THE DOORS.
+intro: THEY KEEP COMING. THREE WAVES.
+quip: THE GUEST ROOM IS NOT FOR GUESTS.
+outro: THE STAIRS GROAN UNDER FED.
+outro: DOWN TO THE SECOND FLOOR.
+facing: E
+sky: SKY_NONE
+floor: TEX_CARPET
+ceiling: TEX_PLASTER
+fog: 2
+walls: TEX_ROSE TEX_BATHTILE TEX_PAINTING
+door: TEX_DOOR
+props: PROP_LAMP PROP_BOX
+music: MUS_EXPLORE
+hazard: HAZ_NONE
+waves: 3
+boss: BOSS_BATHTUB
+map:
+########################
+#..o..#........%.......%
+#.....#...q....%...h...%
+#..R..#...S....%...R...%
+#.....#........%.......%
+###D######D####%%%D%%%%%
+#......................#
+#.@...r......*.....r...#
+#..........s...........#
+####D#####&######D######
+#......#........#......#
+#..R...#...o....#..S...#
+#......#........#......#
+#..q...D....R...#...c..#
+#......#........#......#
+#..m...#....y...#.o....X
+#......#........#......#
+########################

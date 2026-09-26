@@ -1,0 +1,36 @@
+; Level 1 - introductory. Teaches movement, cat attack and feline shield.
+key: FRONT_YARD
+name: FRONT YARD
+place: S. HARPER AVE, HYDE PARK
+intro: GIANT ROACHES IN THE PETUNIAS!
+intro: A: SEND A CAT   B: FELINE SHIELD
+quip: NOBODY TRAMPLES MY PETUNIAS.
+outro: THE FRONT DOOR IS GLUED SHUT
+outro: WITH ROACH SLIME. AROUND THE BACK!
+facing: N
+sky: SKY_DAY
+floor: TEX_GRASS
+ceiling: TEX_PLASTER
+fog: 3
+walls: TEX_HEDGE TEX_FENCE TEX_HOUSE
+door: TEX_DOOR
+props: PROP_BUSH PROP_BIN
+music: MUS_EXPLORE
+hazard: HAZ_NONE
+waves: 2
+boss: BOSS_LAWN
+map:
+&&&&&&&&&X&&&&&&&&&&
+%..................%
+%..o.....*......o..%
+%.....r......r.....%
+%...##........##...%
+%...#h.........#...%
+%......R....R......%
+%..o............o..%
+%.....##....##.....%
+%.......r..........%
+%..c.............m.%
+%........@.........%
+%..................%
+%%%%%%%%%%%%%%%%%%%%

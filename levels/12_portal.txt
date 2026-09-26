@@ -1,0 +1,39 @@
+; Level 12 - elite guard, the invasion leaders, then the portal anchors.
+key: PORTAL
+name: THE PORTAL
+place: THE DEEPEST CORNER
+intro: BEAT THE LEADERS, THEN BREAK
+intro: THE FOUR ANCHORS. SEAL IT SHUT.
+quip: YOU ARE ALL GOING BACK. NOW.
+outro: THE PORTAL COLLAPSES.
+outro: THE CATS ASK ABOUT DINNER.
+facing: N
+exit: none
+sky: SKY_NONE
+floor: TEX_GOO
+ceiling: TEX_GROWTH
+fog: 1
+walls: TEX_GROWTH TEX_STONE TEX_SWIRL
+door: TEX_DOOR
+props: PROP_BOX PROP_PORTAL
+music: MUS_TENSE
+hazard: HAZ_PORTAL
+waves: 2
+boss: BOSS_QUEEN
+map:
+%%%%%%%%%%%%%%%%%%%%%%
+%&&&&&&&&&&&&&&&&&&&&%
+%&........*.........&%
+%&..E............E..&%
+%&......P...P.......&%
+%&..................&%
+%&.e......q.......e.&%
+%&..................&%
+%&......P...P.......&%
+%&..E............E..&%
+%&..................&%
+%&..h....e...e...m..&%
+%&..................&%
+%&..y.....@.....c...&%
+%&&&&&&&&&&&&&&&&&&&&%
+%%%%%%%%%%%%%%%%%%%%%%

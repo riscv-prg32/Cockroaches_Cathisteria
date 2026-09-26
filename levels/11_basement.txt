@@ -1,0 +1,38 @@
+; Level 11 - the source of the invasion. Flickering lights, elite waves.
+key: BASEMENT
+name: BASEMENT
+place: WHERE THE HUMMING IS
+intro: PIPES. FURNACE. ALIEN GOO.
+intro: THE LIGHTS WILL NOT STAY ON.
+quip: I KNEW THAT FURNACE WAS HAUNTED.
+outro: BEHIND THE FURNACE: A HOLE IN
+outro: REALITY. IT IS PURPLE.
+facing: S
+sky: SKY_NONE
+floor: TEX_CONCRETE
+ceiling: TEX_PIPES
+fog: 1
+walls: TEX_STONE TEX_PIPES TEX_GROWTH
+door: TEX_DOOR
+props: PROP_BOX PROP_HEATER
+music: MUS_TENSE
+hazard: HAZ_FLICKER
+waves: 3
+boss: BOSS_FURNACE
+map:
+########################
+#......%.......&.......#
+#.@....%..q....&...E...#
+#......D.......&.......#
+#..s...%...R...D...S...#
+#......%.......&.......#
+%%%.%%%%%%D%%%%&&&&D&&&#
+#......................#
+#..o...e.....*.....o...#
+#......................#
+#...&&&&&....&&&&&.....#
+#..........r...........#
+#.q..b.....h.....a..q..#
+#......................#
+#..c...E.....m....E..y.#
+######################X#

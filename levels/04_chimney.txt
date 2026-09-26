@@ -1,0 +1,45 @@
+; Level 4 - a narrow, winding flue. Bricks fall, roaches drop from above.
+key: CHIMNEY
+name: CHIMNEY
+place: THE LIVING ROOM FLUE
+intro: UP THE CHIMNEY. MIND THE SOOT.
+intro: FALLING BRICKS: SHIELD YOUR HEAD.
+quip: SANTA DOES THIS EVERY YEAR.
+outro: FED POPS OUT ONTO THE ROOF.
+outro: WHAT A VIEW OF THE LAKEFRONT.
+facing: N
+sky: SKY_NONE
+floor: TEX_SOOTFLOOR
+ceiling: TEX_SOOT
+fog: 1
+walls: TEX_SOOT TEX_SOOT TEX_BRICK
+door: TEX_DOOR
+props: PROP_BOX PROP_BOX
+music: MUS_TENSE
+hazard: HAZ_DEBRIS
+waves: 2
+boss: BOSS_SOOT
+flags: LF_DROP
+map:
+############
+#####X######
+####...#####
+###.....####
+###..*..####
+###.....####
+####.R.#####
+#####.######
+####..######
+####.c.R####
+#####..r####
+######.#####
+#####..#####
+####..s.####
+####.#..####
+####.##.####
+####.r..####
+#####...####
+####.m...###
+####.....###
+#####.@..###
+############

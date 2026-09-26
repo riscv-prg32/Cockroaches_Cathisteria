@@ -1,0 +1,38 @@
+; Level 9 - dining room and entrance hall. Elite roaches appear.
+key: FIRST_FLOOR
+name: FIRST FLOOR
+place: DINING ROOM AND HALL
+intro: ELITE ROACHES. RED MEANS FAST.
+intro: THE LIVING ROOM IS NEXT.
+quip: I JUST POLISHED THAT TABLE.
+outro: A LOW RUMBLE FROM THE SOFA.
+outro: SOMETHING HUGE IS WAITING.
+facing: E
+sky: SKY_NONE
+floor: TEX_WOODFLOOR
+ceiling: TEX_PLASTER
+fog: 2
+walls: TEX_WAINSCOT TEX_BRICK TEX_PAINTING
+door: TEX_DOOR
+props: PROP_TABLE PROP_CHAIR
+music: MUS_EXPLORE
+hazard: HAZ_NONE
+waves: 3
+boss: BOSS_BUTLER
+map:
+######################
+#...q.o.q...#........#
+#...q.o.q...#..R..S..#
+#...........#........#
+#..R..E.....D........#
+#...q.o.q...#...B....#
+#...q.o.q...#........#
+######D######&&&D&&&&#
+#...f..........f.....#
+#.@......r.....*.....#
+#.........s.....r....#
+###D###########&&&&&&#
+#.....#..............#
+#..R..D....R....h..c.#
+#..m..#.........y....X
+######################

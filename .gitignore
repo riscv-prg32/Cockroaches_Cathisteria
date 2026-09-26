@@ -53,3 +53,12 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Cockroaches Cathisteria build intermediates
+build/
+__pycache__/
+.DS_Store
+
+# Cartridge staging (release cartridges and the store bundle stay committed)
+dist/*.raw.prg32
+dist/store-bundle/

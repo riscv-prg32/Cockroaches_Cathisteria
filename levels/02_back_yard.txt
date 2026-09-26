@@ -1,0 +1,38 @@
+; Level 2 - beetles, poison spit, enemies from several directions.
+key: BACK_YARD
+name: BACKYARD
+place: BEHIND THE GARAGE
+intro: BEETLES! ARMORED, SLOW, ANGRY.
+intro: SHIELD THE CHARGE, THEN POUNCE.
+quip: WHO LEFT THE GRILL ON? OH. ME.
+outro: THE KITCHEN WINDOW GLOWS GREEN.
+outro: FED KICKS OPEN THE BACK DOOR.
+facing: N
+sky: SKY_DUSK
+floor: TEX_PATIO
+ceiling: TEX_PLASTER
+fog: 3
+walls: TEX_HEDGE TEX_FENCE TEX_SIDING
+door: TEX_DOOR
+props: PROP_GRILL PROP_BUSH
+music: MUS_EXPLORE
+hazard: HAZ_NONE
+waves: 2
+boss: BOSS_GRILL
+map:
+%%%%%%&&&&&X&&&&&%%%%%
+%.....&.........&....%
+%..s..&....*....&..q.%
+%.....&&&.....&&&....%
+%....................%
+%..o....b.....r...o..%
+%......###..###......%
+%......#h....c#......%
+%..R...#......#...R..%
+%......###..###......%
+%.q..................%
+%......r.......S.....%
+%..o.....q.......o...%
+%....m.........y.....%
+%.........@..........%
+%%%%%%%%%%%%%%%%%%%%%%

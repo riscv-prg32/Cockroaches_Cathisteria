@@ -1,0 +1,40 @@
+; Level 8 - study and library. Armored beetles and spitters together.
+key: SECOND_FLOOR
+name: SECOND FLOOR
+place: STUDY AND LIBRARY
+intro: THEY ARE EATING THE BOOKS.
+intro: ARMORED BEETLES: HIT THEM OPEN.
+quip: THAT WAS A FIRST EDITION!
+outro: FED CHECKS OUT. PERMANENTLY.
+outro: DOWN TO THE FIRST FLOOR.
+facing: N
+sky: SKY_NONE
+floor: TEX_WOODFLOOR
+ceiling: TEX_PLASTER
+fog: 2
+walls: TEX_STRIPES TEX_BOOKS TEX_PAINTING
+door: TEX_DOOR
+props: PROP_TABLE PROP_LAMP
+music: MUS_EXPLORE
+hazard: HAZ_NONE
+waves: 3
+boss: BOSS_LIBRARIAN
+map:
+%%%%%%%%%%%%############
+%....q.....%#..........#
+%.%%.%%.%%.%#...o..A...#
+X..........%#..........#
+%.%%.%%.%%.%#...S...h..#
+%....B.....%####D#######
+%.%%.%%.%%.%...........#
+%.....c....D.....*.....#
+%%%%%%%%%%%%...........#
+#.....#......b....a....#
+#..o..#................#
+#.....D....s.....r.....#
+#..R..#................#
+#.....#..q.....q.......#
+#..m..####.#############
+#..y..#.......r...s....#
+#.....#.@..............#
+########################

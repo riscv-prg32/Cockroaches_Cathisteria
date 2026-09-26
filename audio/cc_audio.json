@@ -1,0 +1,97 @@
+{
+  "comment": "Cockroaches Cathisteria AUDIO block: four PCM waves and seven instruments. Music and effects are sequenced by the cartridge (src/audio.c).",
+  "samples": [
+    {
+      "file": "samples/pulse.u8",
+      "base_note": 60,
+      "loop": true
+    },
+    {
+      "file": "samples/saw.u8",
+      "base_note": 60,
+      "loop": true
+    },
+    {
+      "file": "samples/tri.u8",
+      "base_note": 60,
+      "loop": true
+    },
+    {
+      "file": "samples/noise.u8",
+      "base_note": 60,
+      "loop": true
+    }
+  ],
+  "instruments": [
+    {
+      "name": "PULSE",
+      "sample_id": 0,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 0,
+      "sustain": 255,
+      "release": 0
+    },
+    {
+      "name": "SAW",
+      "sample_id": 1,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 0,
+      "sustain": 255,
+      "release": 0
+    },
+    {
+      "name": "TRI",
+      "sample_id": 2,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 0,
+      "sustain": 255,
+      "release": 0
+    },
+    {
+      "name": "NOISE",
+      "sample_id": 3,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 0,
+      "sustain": 255,
+      "release": 0
+    },
+    {
+      "name": "BASS",
+      "sample_id": 40720,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 1,
+      "decay": 60,
+      "sustain": 150,
+      "release": 30
+    },
+    {
+      "name": "KICK",
+      "sample_id": 40832,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 30,
+      "sustain": 0,
+      "release": 10
+    },
+    {
+      "name": "BOOM",
+      "sample_id": 40467,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 110,
+      "sustain": 0,
+      "release": 40
+    }
+  ]
+}

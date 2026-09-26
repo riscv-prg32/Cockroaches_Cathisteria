@@ -1,0 +1,38 @@
+; Level 5 - rooftop: holes along the edges, winged roaches, antennas.
+key: ROOF
+name: ROOF
+place: ABOVE HYDE PARK
+intro: WINGED ROACHES. OF COURSE.
+intro: DO NOT STEP INTO THE HOLES.
+quip: I SHOULD HAVE FIXED THESE SHINGLES.
+outro: THE MANSARD WINDOW IS OPEN.
+outro: FED CLIMBS IN. CATS FIRST.
+facing: N
+sky: SKY_NIGHT
+floor: TEX_SHINGLES
+ceiling: TEX_PLASTER
+fog: 3
+walls: TEX_BRICK TEX_PARAPET TEX_DORMER
+door: TEX_DOOR
+props: PROP_ANTENNA PROP_BIN
+music: MUS_TENSE
+hazard: HAZ_HOLES
+waves: 2
+boss: BOSS_GUTTER
+map:
+%%%%%%%%%&&X&&%%%%%%%%
+%v.......&..&.......v%
+%v...w.........w....v%
+%v..##....*....##...v%
+%v..##.........##...v%
+%v......o...o.......v%
+%v...vv.......vv....v%
+%v...vv...r...vv....v%
+%v..r.....c.....r...v%
+%v......##.##.......v%
+%v...W..##.##..W....v%
+%v..........h.......v%
+%v..o...m.....y..o..v%
+%v.........@........v%
+%vvvvvvvvvvvvvvvvvvvv%
+%%%%%%%%%%%%%%%%%%%%%%

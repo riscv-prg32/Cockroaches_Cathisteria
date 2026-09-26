@@ -1,0 +1,40 @@
+; Level 3 - tight indoor combat among counters, tables and chairs.
+key: KITCHEN
+name: KITCHEN
+place: GROUND FLOOR, BACK
+intro: THE KITCHEN IS CRAWLING.
+intro: GREEN SPIT BURNS. SHIELD IT.
+quip: FEELERS OFF MY TOASTER!
+outro: A COCOON SEALS THE BASEMENT DOOR.
+outro: ONLY OTHER WAY DOWN: UP. CHIMNEY!
+facing: N
+sky: SKY_NONE
+floor: TEX_CHECKER
+ceiling: TEX_PLASTER
+fog: 2
+walls: TEX_KTILE TEX_CABINET TEX_FRIDGE
+door: TEX_DOOR
+props: PROP_TABLE PROP_CHAIR
+music: MUS_EXPLORE
+hazard: HAZ_NONE
+waves: 2
+boss: BOSS_CRUMB
+map:
+####################
+#%%%%%%&&%%%%%%%%%%#
+#..................X
+#..R.....*......R..#
+#......o..o........#
+#..S...q..q....S...#
+#..................#
+#%%%.....%%.....%%%#
+#..........c.......#
+##########DD########
+#.......#..........#
+#..R....#.....r....#
+#..o....#..........#
+#.......D....s.....#
+#..m....#.........h#
+#.......#..q.o.....#
+#.......#....@.....#
+####################

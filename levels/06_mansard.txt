@@ -1,0 +1,37 @@
+; Level 6 - the attic: dark, cramped, full of boxes and trunks.
+key: MANSARD
+name: MANSARD
+place: THE ATTIC
+intro: DARK. DUSTY. SOMETHING SKITTERS.
+intro: THE LONG DESCENT BEGINS HERE.
+quip: CAREFUL WITH GRANDMA'S TRUNKS.
+outro: THE ATTIC HATCH CREAKS OPEN.
+outro: DOWN TO THE THIRD FLOOR.
+facing: E
+sky: SKY_NONE
+floor: TEX_ATTICFLOOR
+ceiling: TEX_BEAMS
+fog: 0
+walls: TEX_ATTIC TEX_ATTIC TEX_DORMER
+door: TEX_DOOR
+props: PROP_BOX PROP_TRUNK
+music: MUS_TENSE
+hazard: HAZ_DARK
+waves: 2
+boss: BOSS_DUST
+map:
+####################
+#c..#..o.....q....h#
+#.@.#..............#
+#.......r.....r....#
+#...#..o..###...o..#
+#####.....#*.......#
+#..q......#........#
+#.....s...####..s..#
+#..o...........q...#
+#....R....o...R....#
+#.......q..........#
+#..m.....S.....o...#
+#.........#.#......#
+#..q..R...#X#..y...#
+####################

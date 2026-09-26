@@ -1,0 +1,36 @@
+; Level 10 - the last major boss before the basement.
+key: LIVING_ROOM
+name: LIVING ROOM
+place: BY THE FIREPLACE
+intro: SOMETHING HUGE IS ON THE COUCH.
+intro: IT IS THE COUCH.
+quip: THAT IS MY SPOT.
+outro: THE BASEMENT DOOR. FINALLY.
+outro: IT HUMS. IT GLOWS. IT SMELLS.
+facing: N
+sky: SKY_NONE
+floor: TEX_CARPET
+ceiling: TEX_PLASTER
+fog: 2
+walls: TEX_STRIPES TEX_BRICK TEX_PAINTING
+door: TEX_DOOR
+props: PROP_LAMP PROP_BUSH
+music: MUS_EXPLORE
+hazard: HAZ_NONE
+waves: 2
+boss: BOSS_COUCH
+map:
+######################
+#.....&...%%%%...&...#
+#..o...............o.#
+#.....r........r.....#
+#...q...........q....#
+#.........*..........#
+#..s..............s..#
+#....##........##....#
+#....##...h....##....#
+#.........y..........#
+#..q....R....R....q..#
+#.o................o.#
+#..m......@.......c..#
+##########X###########

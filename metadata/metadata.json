@@ -1,0 +1,25 @@
+{
+  "abi": "prg32-metadata-1.0",
+  "id": "prg32.cockroaches",
+  "title": "Cockroaches Cathisteria",
+  "version": "1.0.0",
+  "summary": "A Doom-style invasion defense: Fed saves humanity from alien cockroaches with an army of cats.",
+  "description": "Fed lives in a three-story house on South Harper Street, Hyde Park, Chicago, with her formidable feline armada. When an interdimensional portal opens in her basement, giant alien cockroaches and beetles pour out, and Fed fights her way from the front yard through the kitchen, up the chimney, across the roof and down through every floor of the house to seal the portal. Her cats are her weapons: press A to send a cat at the enemy in the crosshair, hold B to raise the feline shield. Twelve levels, twelve bosses plus the invasion leaders, a raycast 3D view with textured walls, floors and ceilings, procedural pixel art and a small SID-style soundtrack, all inside the 64 KiB PRG32 cartridge.",
+  "authors": [
+    {"name": "Raffaele Montella", "affiliation": "UniParthenope"}
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/riscv-prg32/Cockroaches_Cathisteria",
+  "repository": "https://github.com/riscv-prg32/Cockroaches_Cathisteria",
+  "tags": ["game", "action", "fps", "raycaster", "doom-like", "cats", "c", "riscv", "prg32"],
+  "created_at": "2026-09-26T00:00:00Z",
+  "updated_at": "2026-09-26T00:00:00Z",
+  "runtime": {
+    "platform": "PRG32",
+    "isa": "RV32IMC",
+    "architectures": [
+      {"id": "esp32c6", "label": "ESP32-C6 hardware", "target": "esp32c6", "display": "ili9341", "isa": "RV32IMC"},
+      {"id": "qemu", "label": "QEMU virtual screen", "target": "esp32c3", "display": "qemu-rgb", "isa": "RV32IMC"}
+    ]
+  }
+}
