@@ -14,7 +14,7 @@ Map legend (tile code in brackets):
 
   .  floor [0]           #  wall A [1]        %  wall B [9]     &  wall C [10]
   D  door [2]            o  prop A [3]        q  prop B [14]    X  exit [4]
-  *  boss spawn [5]      c  cat rescue [6]    h  deep-dish pizza (health) [7]
+  *  boss spawn [5]      c  cat rescue [6]    h  pizza alla Nerano (health) [7]
   P  portal anchor [8]   m  cat food [11]     y  yarn ball (shield boost) [12]
   v  roof hole [13]      @  player start
   enemies, wave 1 / wave 2:

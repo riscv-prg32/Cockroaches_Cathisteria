@@ -256,11 +256,12 @@ cat_palette("cat_black", C(0, 0, 0), C(1, 1, 1), C(2, 2, 2), C(0, 0, 0), eye=C(5
 cat_palette("cat_gray", C(2, 2, 2), C(3, 3, 3), C(4, 4, 4), C(2, 2, 2), eye=C(1, 4, 5))
 cat_palette("cat_calico", C(1, 1, 1), C(5, 5, 5), C(5, 4, 3), C(5, 2, 0))
 cat_palette("cat_siamese", C(2, 1, 0), C(5, 4, 3), C(5, 5, 4), C(3, 2, 1), eye=C(0, 2, 5))
-palette("fed", 0, C(0, 0, 0), C(1, 0, 2), C(2, 0, 3), C(3, 1, 4), C(5, 4, 3), C(4, 3, 2),
-        C(0, 3, 3), C(5, 0, 1), C(5, 4, 0), C(5, 3, 3), C(5, 5, 5), C(1, 3, 5), C(3, 0, 0),
-        C(4, 1, 5))
-palette("items", 0, C(0, 0, 0), C(4, 2, 0), C(5, 3, 1), C(5, 0, 0), C(3, 0, 0), C(5, 5, 1),
-        C(5, 5, 4), C(0, 2, 4), C(1, 4, 5), C(4, 4, 4), C(2, 2, 2), C(5, 2, 4), C(4, 0, 2),
+# Fed (Federica): dark-brown wavy hair, thin light glasses, magenta dress.
+palette("fed", 0, C(0, 0, 0), C(0, 0, 0), C(1, 0, 0), C(2, 1, 0), C(5, 4, 3), C(4, 3, 2),
+        C(4, 4, 4), C(4, 1, 1), C(5, 4, 0), C(5, 3, 3), C(5, 5, 5), C(4, 5, 5), C(3, 0, 0),
+        C(5, 0, 4), C(3, 0, 3))
+palette("items", 0, C(0, 0, 0), C(4, 2, 0), C(5, 3, 1), C(4, 5, 3), C(0, 2, 0), C(5, 4, 1),
+        C(5, 5, 3), C(0, 2, 4), C(1, 4, 5), C(4, 4, 4), C(0, 4, 0), C(5, 2, 4), C(4, 0, 2),
         C(5, 4, 5), C(5, 5, 5))
 palette("poison", 0, C(0, 1, 0), C(0, 3, 0), C(1, 5, 0), C(4, 5, 2), C(5, 5, 5), C(0, 2, 0),
         C(2, 4, 0))
@@ -910,61 +911,78 @@ def cat_dazed() -> Canvas:
 
 
 def fed(expr: str) -> Canvas:
+    """Fed, after Federica: shoulder-length dark wavy hair with a side part,
+    thin round light-framed glasses, a warm smile and a magenta dress."""
     c = Canvas(24, 24)
     rng = random.Random(7)
-    c.ellipse(12, 10, 11, 10, 3)                  # big curly hair
-    for _ in range(26):
-        a = rng.uniform(0, 2 * math.pi)
-        c.ellipse(12 + math.cos(a) * 10, 10 + math.sin(a) * 9, 2.2, 2.2, rng.choice((2, 3, 4)))
-    for _ in range(14):
-        c.set(rng.randrange(3, 21), rng.randrange(1, 12), 4)
-    c.ellipse(12, 14, 6.5, 7.5, 5)               # face
-    c.ellipse(9, 18, 1.3, 1, 10)                 # blush
-    c.ellipse(15, 18, 1.3, 1, 10)
-    c.poly([(5, 8), (18, 8), (17, 5), (9, 4)], 3)  # fringe
-    c.line(6, 21, 6, 20, 9)                      # earrings
-    c.line(18, 21, 18, 20, 9)
-    # cat-eye glasses
-    for cx in (8.5, 15.5):
-        c.ellipse(cx, 13, 2.8, 2.2, 12)
-        c.set(cx - 1, 12, 11)
-    c.line(5, 11.5, 6, 11, 7)
-    c.line(19, 11.5, 18, 11, 7)
-    c.line(5.5, 12, 11, 11, 7)
-    c.line(12.5, 11, 18.5, 12, 7)
-    c.line(11, 13, 13, 13, 7)
+    c.ellipse(12, 10, 9.5, 9, 3)                  # hair mass
+    for side in (-1, 1):                          # waves down to the shoulders
+        for k, y in enumerate((11, 14, 17, 19)):
+            c.ellipse(12 + side * (8.2 - (k & 1)), y, 2.6, 2.2, 3 if k & 1 else 2)
+    for _ in range(18):
+        c.set(rng.randrange(3, 21), rng.randrange(2, 20), rng.choice((2, 4)))
+    c.poly([(4, 24), (6, 20), (10, 19), (14, 19), (18, 20), (20, 24)], 5)   # shoulders
+    c.rect(9, 17, 14, 20, 5)                      # neck
+    c.line(7, 20, 6, 23, 14)                      # magenta dress straps
+    c.line(17, 20, 18, 23, 14)
+    c.poly([(7, 24), (8, 22), (16, 22), (17, 24)], 14)
+    c.line(8, 22, 16, 22, 15)
+    c.ellipse(12, 12, 5.8, 7, 5)                  # face
+    c.ellipse(12, 16, 4.2, 2.6, 6)                # jaw shade
+    c.ellipse(12, 12.5, 5.2, 5.6, 5)
+    c.poly([(5.5, 11), (7, 4.5), (13, 3), (19, 6), (18.5, 9), (14, 6.5), (9, 6.5), (7, 11)], 3)  # side part
+    c.line(9, 4, 13, 3, 4)
+    c.set(5.8, 15, 9)                             # earrings
+    c.set(18.2, 15, 9)
+    c.ellipse(8.5, 15, 1.2, 0.8, 10)              # cheeks
+    c.ellipse(15.5, 15, 1.2, 0.8, 10)
+    for cx in (9.2, 14.8):                        # thin round glasses
+        for a in range(0, 360, 20):
+            c.set(cx + 2.4 * math.cos(math.radians(a)), 11.5 + 2.1 * math.sin(math.radians(a)), 7)
+        c.set(cx - 1, 10.5, 12)
+    c.line(11.3, 11, 12.7, 11, 7)
+    c.line(6.4, 11, 5.6, 11, 7)
+    c.line(17.6, 11, 18.4, 11, 7)
     if expr == "ok":
-        c.set(8.5, 13, 1)
-        c.set(15.5, 13, 1)
-        c.line(9, 19, 15, 19, 8)
-        c.set(8.5, 18, 8)
-        c.set(15.5, 18, 8)
+        c.set(9.2, 11.7, 1)
+        c.set(14.8, 11.7, 1)
+        c.line(9.5, 15.5, 14.5, 15.5, 11)         # big warm smile
+        c.line(9, 15, 10, 16.3, 8)
+        c.line(15, 15, 14, 16.3, 8)
+        c.line(10, 16.4, 14, 16.4, 8)
     elif expr == "ouch":
-        c.line(7.5, 13, 9.5, 12.5, 1)
-        c.line(14.5, 12.5, 16.5, 13, 1)
-        c.ellipse(12, 19.5, 1.6, 1.8, 13)
-        c.set(20, 13, 12)
-        c.set(20, 14, 12)
-        c.set(21, 12, 11)
+        c.line(8.2, 11.8, 10.2, 11.3, 1)
+        c.line(13.8, 11.3, 15.8, 11.8, 1)
+        c.ellipse(12, 16, 1.4, 1.5, 13)
+        c.set(19, 9, 12)
+        c.set(19, 10, 12)
     else:  # fierce
-        c.line(6.5, 9.5, 10, 10.5, 1)
-        c.line(17.5, 9.5, 14, 10.5, 1)
-        c.set(8.5, 13, 1)
-        c.set(15.5, 13, 1)
-        c.rect(9, 18, 15, 19, 8)
-        c.line(10, 18.5, 14, 18.5, 11)
+        c.line(7.5, 8.8, 10.5, 9.8, 1)
+        c.line(16.5, 8.8, 13.5, 9.8, 1)
+        c.set(9.2, 11.7, 1)
+        c.set(14.8, 11.7, 1)
+        c.rect(9, 15, 15, 16, 8)
+        c.line(10, 15.5, 14, 15.5, 11)
     c.outline(1)
     return c
 
 
 def item(kind: str) -> Canvas:
     if kind == "pizza":
+        # pizza alla Nerano: zucchini and provolone del Monaco, basil, no tomato
         c = Canvas(16, 16)
-        c.poly([(1, 3), (15, 3), (8, 15)], 3)          # crust
-        c.poly([(2.5, 5), (13.5, 5), (8, 13.5)], 4)     # sauce
-        for x, y in ((5, 6), (9, 7), (7, 9), (11, 6)):
-            c.ellipse(x, y, 1.2, 1, 6)                  # cheese
-        c.rect(1, 2, 15, 3, 2)
+        c.ellipse(7.5, 8, 7.5, 6.5, 2)                  # crust
+        c.ellipse(7.5, 7.5, 7, 5.8, 3)
+        for x, y in ((2, 6), (12, 4), (13, 11), (4, 12)):
+            c.set(x, y, 1)                              # charred spots
+        c.ellipse(7.5, 8, 5.6, 4.6, 7)                  # provolone del Monaco
+        for x, y in ((4.5, 6), (9, 5), (11, 9), (6, 10), (12.5, 6.5), (3, 9)):
+            c.ellipse(x, y, 1.6, 1.3, 5)                # zucchini rounds: green skin
+            c.ellipse(x, y, 0.9, 0.7, 4)                # pale flesh
+        for x, y in ((8, 8), (7, 4), (10, 11)):
+            c.set(x, y, 6)                              # golden provolone
+        c.poly([(6, 5), (8, 4.5), (7.5, 6.5)], 11)      # basil
+        c.poly([(9, 10), (11, 10.5), (9.5, 11.5)], 11)
         c.outline(1)
         return c
     if kind == "food":

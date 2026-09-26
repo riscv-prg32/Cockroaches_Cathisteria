@@ -139,7 +139,7 @@ static void pickups_update(void) {
         case PK_HEALTH:
             if (pl.health >= 100) continue; /* leave it for later */
             pl.health = IMIN(100, pl.health + 35);
-            message("DEEP-DISH PIZZA! FED FEELS BETTER.", 60);
+            message("PIZZA ALLA NERANO! FED FEELS BETTER.", 60);
             sfx(SFX_PICKUP);
             break;
         case PK_FOOD:

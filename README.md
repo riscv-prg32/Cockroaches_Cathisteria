@@ -23,7 +23,7 @@ A compact, Doom-inspired first-person action cartridge for [PRG32](https://githu
 
 **Cats get hurt.** A cat that pounces on a beetle, an elite or a boss in mid-attack can be knocked out. Poison can scare a cat into hiding. Such cats appear on the floor, dazed (shown in red in the HUD). Walk over one to bring it back, and every dazed cat comes home when the room boss falls. The armada never drops below one loyal cat.
 
-**Pickups:** a sitting cat (rescue: +1 cat), deep-dish pizza (+35 health), cat food (shield recharged, poison cured) and a ball of yarn (10 s of super shield).
+**Pickups:** a sitting cat (rescue: +1 cat), pizza alla Nerano, zucchini and provolone del Monaco (+35 health), cat food (shield recharged, poison cured) and a ball of yarn (10 s of super shield).
 
 **Enemies:** roaches, fast runners, green spitters, armored beetles (shield their charge and they bounce off, belly-up and vulnerable), steel beetles, red elites and winged roaches. Every level ends with a boss. Bosses mix charges, poison volleys, poison rings, summoned minions, invulnerable shells and crushing jumps. Below half health they become enraged.
 
