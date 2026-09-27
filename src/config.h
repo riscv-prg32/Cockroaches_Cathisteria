@@ -66,9 +66,9 @@
 #define MAX_ENEMIES 20
 #define MAX_PROJECTILES 16
 #define MAX_CATS 9
-#define MAX_PICKUPS 20
+#define MAX_PICKUPS 14
 #define MAX_PUDDLES 6
-#define MAX_PROPS 28
+#define MAX_PROPS 16
 #define MAX_DEBRIS 3
 #define MAX_VIS 40
 #define MAX_OPS 36

@@ -15,7 +15,7 @@ fog: 0
 walls: TEX_ATTIC TEX_ATTIC TEX_DORMER
 door: TEX_DOOR
 props: PROP_BOX PROP_TRUNK
-music: MUS_TENSE
+music: MUS_EXPLORE
 hazard: HAZ_DARK
 waves: 2
 boss: BOSS_DUST

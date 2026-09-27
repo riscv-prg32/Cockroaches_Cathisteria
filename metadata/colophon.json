@@ -2,8 +2,8 @@
   "abi": "prg32-colophon-1.0",
   "title": "Cockroaches Cathisteria",
   "subtitle": "Fed, her cats, and the end of the world in the basement",
-  "version": "1.0.0",
-  "release_date": "2026-09-26",
+  "version": "1.1.0",
+  "release_date": "2026-09-28",
   "developer": {
     "name": "UniParthenope PRG32",
     "url": "https://github.com/riscv-prg32/Cockroaches_Cathisteria"
@@ -16,7 +16,8 @@
   "copyright": "Copyright 2026 PRG32",
   "acknowledgements": [
     "A Doom-inspired game written from scratch: no names, art, sounds or levels from commercial games.",
-    "The 8x8 font is the PRG32 firmware font."
+    "The 8x8 font is the PRG32 firmware font.",
+    "The soundtrack is an original 12-bar Chicago blues: no existing songs are quoted."
   ],
   "controls": [
     {"input": "UP / DOWN", "action": "Walk forward / back"},

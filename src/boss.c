@@ -268,6 +268,11 @@ static void boss_think(enemy_t *e, int i) {
     }
 }
 
+/* Pouncing on a boss while it winds up or charges can knock a cat out. */
+static int boss_is_risky(const enemy_t *e) {
+    return e->bstate == B_WINDUP || e->bstate == B_CHARGE;
+}
+
 static void boss_sprite(const enemy_t *e, int *spr, int *pal, int *flags, int *ww, int *wh) {
     const boss_def_t *b = &boss_defs[e->boss];
     int queen = b->spr == SPR_QUEEN_A, beetle = b->spr == SPR_BEETLE_A;
@@ -281,7 +286,7 @@ static void boss_sprite(const enemy_t *e, int *spr, int *pal, int *flags, int *w
     if (e->bstate == B_WINDUP && (ticks & 2)) *flags = VF_FLASH;
     if (e->flags & EF_INVULN) *flags |= VF_DARK;
     if (e->state == AI_DEAD) {
-        *spr = queen ? SPR_QUEEN_A : beetle ? SPR_BEETLE_DEAD : SPR_ROACH_DEAD;
+        *spr = queen ? SPR_QUEEN_A : beetle ? SPR_BEETLE_OPEN : SPR_ROACH_ATK;
         *flags |= VF_DARK;
     } else if (queen) {
         *spr = SPR_QUEEN_A;

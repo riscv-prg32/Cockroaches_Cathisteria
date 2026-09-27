@@ -10,6 +10,7 @@ The PRG32 runtime shapes every decision:
 |---|---|---|
 | Cartridge RAM (code + data + bss) | 65,536 bytes | every table is budgeted; no framebuffer of our own |
 | Store image (code + audio + metadata) | 65,536 bytes | small palettised store art, a tiny AUDIO block |
+| Load image (code + data + audio, one heap block) | about 54.5 KB in QEMU (measured) | tighter than the RAM limit: bss does not count, tables do |
 | Portable ABI cartridges | no relocations | no pointers in initialised static tables |
 | Freestanding RV32IMC, no libgcc | | integer and fixed-point maths, own `memset`/`memcpy` |
 | One source file per build | | unity build: `src/main.c` includes every module |
@@ -79,25 +80,29 @@ The cartridge has no room for a 320x200 buffer (64,000 bytes). A 4-row strip is 
 
 ## 4. Memory budget (measured)
 
-`scripts/build.sh` reports `code=52668 mem=63244`. The largest items:
+`scripts/build.sh` reports `code=53404 mem=63596 audio=588` for version 1.1. The largest items:
 
 | Item | Bytes | Notes |
 |---|---:|---|
-| code (.text) | ~26,000 | all modules, `-Os` |
-| sprite pixels | 8,428 | 34 frames, 4 bpp, up to 32x32 |
-| texture patterns | 3,456 | 27 patterns, 16x16, 4 bpp |
-| level maps + text + defs + spawns | ~4,900 | 12 levels, maps 4-bit packed |
-| palettes | 1,152 | 72 x 16 cube indices |
-| font, sine, skyline, songs, sfx, boss table | ~2,200 | |
-| string literals | ~2,600 | messages and pages |
+| code (.text) | ~29,000 | all modules, `-Os` |
+| sprite pixels | 8,172 | 33 frames, 4 bpp, up to 32x32 |
+| texture patterns | 2,624 | 27 patterns, 16x16: 13 at 2 bpp, 14 at 4 bpp |
+| level and page text | 3,170 | one NUL-separated blob, strings shared |
+| level maps | 1,036 | run-length coded, 12 levels |
+| page items | 830 | 83 drawing items (`pages/pages.txt`) |
+| level definitions + spawns | 786 | |
+| palettes | 888 | 37 sprite palettes x 16, 37 texture palettes x 8 |
+| font, sine, skyline, blues patterns, sfx, boss table | ~2,000 | |
+| string literals | ~1,800 | in-game messages |
 | shade tables + RGB565 palette | 1,728 | bss, built at init |
 | strip buffer | 1,280 | bss |
-| per-ray arrays | ~1,900 | bss |
-| object pools | ~2,300 | 20 enemies, 16 projectiles, 9 cats, 20 pickups, 6 puddles, 28 props |
+| per-ray arrays | ~2,100 | bss |
+| object pools | ~1,900 | 20 enemies, 16 projectiles, 9 cats, 14 pickups, 6 puddles, 16 props |
 | map | 640 | bss; `tools/gen_levels.py` enforces w*h <= 640 |
-| **total** | **63,244** | 2,292 bytes free |
+| **cartridge RAM** | **63,596** | 1,940 bytes free |
+| **load image** | **~54,090** | header + code/data + AUDIO block, about 460 bytes under the QEMU limit |
 
-Savings already taken: per-ray texture offsets instead of pointers, packed level strings, 4-row strips, 16-bit texture steps, one queen frame (her attack is a flash), and a compact op record.
+The Chicago blues soundtrack, the finale and Ralph cost about 4.4 KB of code and data. The space came from these savings: run-length coded maps, the full-screen pages turned from code into data, 2-bpp patterns where four colours suffice, 8-entry texture palettes, a 65-step sine table with interpolation, no "dead" sprite frames (a dead bug is its attack frame, flattened and darkened), a shorter noise loop, a redundant per-ray skyline cache removed, and pools sized to what the levels need. Earlier savings: per-ray texture offsets instead of pointers, packed level strings, 4-row strips, 16-bit texture steps, one queen frame, and a compact op record.
 
 ## 5. Performance
 
@@ -162,7 +167,22 @@ Wave-1 enemies are lowercase letters in the map and wave-2 enemies uppercase. A 
 | Furnace Warden | 11 | burst, charge (shell, rapid) |
 | Cockroach Queen + General Chitin | 12 | summon, burst, shell / charge, rapid, jump (rapid / burst) |
 
-When the last boss falls, `on_boss_defeated()` runs exactly once. It recovers the dazed cats, drops the leaderless minions and opens the exit. On the portal level it instead unseals the four anchors and enters FINAL_PORTAL. There, a surge every 5 s (announced 1.5 s ahead) costs 15 health unless the shield is up, and the portal spits reinforcements. The last anchor collapses the portal and starts the ending.
+When the last boss falls, `on_boss_defeated()` runs exactly once. It recovers the dazed cats, drops the leaderless minions and opens the exit. On the portal level it starts the finale instead.
+
+### The finale (spoilers)
+
+Nothing before the last fight mentions Ralph: not the title, the story, the level texts, the HUD or the store description. After the invasion leaders fall, `ST_FINAL_PORTAL` runs a short sequence of phases (`finale` in `src/game.c`):
+
+| Phase | What happens | Music |
+|---|---|---|
+| REVEAL | The portal destabilises. Fed turns towards what its machinery was hiding: Ralph, her husband, held in a containment field. "Ralph?!" "Fed!" "...I knew this basement was trouble." | the band stops; a slow guitar phrase and a harmonica answer |
+| NODES | Three containment nodes around Ralph become vulnerable. Portal surges and reinforcements keep coming. The field flickers faster as nodes break. | rescue blues: the theme returns |
+| PROTECT | Ralph runs to Fed, then walks back to the entrance with her (scripted and straight-line; he clambers over the machinery). The portal fires bolts at him. A hit stuns him, unless Fed holds the shield within about 1.5 tiles of him. | rescue blues |
+| ANCHORS | Only now do the four anchors unseal. Surges and reinforcements come faster, and bolts target Fed. | finale crescendo: one layer per broken anchor (drums, bass, organ, lead) |
+| STABILIZER | The portal is collapsing but a stabilizer inside holds it open. A sends the whole armada at once. It takes all of them. | full crescendo, most distorted |
+| COLLAPSE | The cats race home. The portal closes only when the last cat is back, and that instant is silence. Pressing A no longer sends cats. | silence, held, then the victory blues on the ending |
+
+The anchors cannot be broken while Ralph is trapped: sealing the portal first would leave him on the other side. The ending shows the three of them in the ruined basement ("What happened?" "Cockroaches." "...right." Meow.), then the final screen with Fed, Ralph, the armada and the sealed remains of the portal: HUMANITY SAVED, RALPH RESCUED, THE PORTAL IS SEALED ...FOR GOOD, and after a pause THE CATS WANT DINNER. Ralph's pixel art follows a reference photograph: short dark hair, thin black rectangular glasses, a round face with a wry smile, a white polo shirt and a smartwatch.
 
 ### Checkpoints
 
@@ -172,11 +192,51 @@ Entering a level saves Fed's health (at least 60) and the armada size. Retrying 
 
 **Levels** (`levels/NN_name.txt`) are a header of `key: value` lines plus an ASCII map. The legend is at the top of `tools/gen_levels.py`. The compiler checks the map is rectangular and closed, has exactly one start, one boss spawn and one exit, and that every item, enemy and objective is reachable. It emits pointer-free tables, with strings stored as offsets into one `level_text[]` blob. New levels need no engine code.
 
-**Art** is procedural. A texture is a 16x16 4-bpp pattern plus a 16-colour palette, so one pattern serves several textures (brick, soot and parapet share one). Sprites are 4 bpp with colour 0 transparent. Palette swaps make the enemy variants and bosses: roach slots 10–11 are the wings, which turn translucent blue for the winged roach. Props map a sprite and palette to a world size.
+**Pages** (`pages/pages.txt`) describe the title, help, story, ending and game-over screens as a short drawing script (text, sprites, rows of cats, dialogue boxes, prompts, each optionally visible only in a tick window). The level compiler turns them into `page_items[]` (10 bytes each) plus strings in the shared text blob, and `page_ops()` in `hud.c` draws them. This takes far less space than a call per item.
+
+**Maps** are run-length coded: one byte per run, `(length - 1) << 4 | tile`.
+
+**Art** is procedural. A texture is a 16x16 pattern (2 bpp when it uses at most four colours, otherwise 4 bpp) plus an 8-colour palette, so one pattern serves several textures (brick, soot and parapet share one). Sprites are 4 bpp with colour 0 transparent. Palette swaps make the enemy variants and bosses: roach slots 10–11 are the wings, which turn translucent blue for the winged roach. Props map a sprite and palette to a world size.
 
 ## 8. Audio
 
-The AUDIO block holds four 84-sample PCM waves tuned to C4 (pulse, saw, triangle, noise) and three firmware-synth instruments (bass, kick, boom). Synth instruments are encoded for the bit layout `prg32_audio_synth_start()` actually decodes: wave 1:0, resonance 6:4 (kept at 3 or below), cutoff 9:7, pulse width 13:10. Effects are 4-byte steps (instrument, note, volume, ticks) sequenced at 30 Hz on voices 6–7. Music is three 32-step voices on voices 0–2, and the portal hum uses voice 5.
+### What PRG32 offers
+
+The PRG32 audio runtime mixes eight voices at 22,050 Hz. Each voice plays either a looped 8-bit PCM sample (pitched per note) or a firmware synth voice (triangle, saw, pulse or noise, with an ADSR envelope and a resonant low-pass filter). Per-channel volume and pan can change at run time, and effects and music share the mixer. The firmware tracker spends one tick per event and cannot play simultaneous notes, so the cartridge sequences everything itself at the 30 Hz logic rate from short reusable patterns. No PCM tracks are stored.
+
+The AUDIO block holds four PCM waves tuned to C4 (84-sample pulse, saw and triangle, and a 160-sample noise loop) and three synth instruments (bass, kick, boom). Synth instruments are encoded for the bit layout `prg32_audio_synth_start()` actually decodes: wave 1:0, resonance 6:4 (kept at 3 or below), cutoff 9:7, pulse width 13:10.
+
+### The blues band
+
+The soundtrack is one original 12-bar blues in A (I-I-I-I, IV-IV, I-I, V-IV, I-V), played in swung eighths: each beat is a long and a short step (2/3 and 1/3 of the beat). There are five parts:
+
+| Voice | Part |
+|---|---|
+| 0 | bass: sparse root-fifth, walking quarters, boogie-woogie eighths, heavy low register, or "doom" (flat second and tritone) |
+| 1 | lead: harmonica (pulse) or guitar (saw) riffs from the A blues scale. Calls sound on even bars, answers on odd bars, and every riff follows the chord root. |
+| 2 | drums: kick, snare and hat from the synth kick and the noise wave, in light, shuffle, driving or displaced patterns |
+| 3 | organ stabs on the third and the flat seventh of each chord, on the off-beats |
+| 4 | portal noises (distorted moods only) |
+
+Voice 5 carries the portal hum, and voices 6–7 the sound effects.
+
+A mood is one row of `moods[]` in `src/audio.c`: a tempo plus a choice of bass, drum, call and answer patterns, organ on or off, and the lead instrument:
+
+| Mood | Used for | Character |
+|---|---|---|
+| EXPLORE | calm rooms, title, level cards | 100 bpm, root-fifth bass, brushes, an occasional harmonica phrase |
+| DANGER | enemies have noticed Fed | 120 bpm, walking bass, full shuffle, a repeating tension riff |
+| COMBAT | enemies close in, or Fed was just hit (lasts 4 s) | boogie bass, shuffle, fast runs answered by the harmonica, organ |
+| BOSS | every boss fight | 150 bpm, heavy low bass, driving drums, the boss riff |
+| PORTAL | calm moments in the basement and the portal chamber | doom bass, displaced drums, alien intervals |
+| SAD | the reveal, game over | 75 bpm, no bass, slow guitar and a harmonica answer |
+| RESCUE | freeing Ralph | walking bass, call and answer: the theme returning |
+| CRESCENDO | the anchors and the stabilizer | layered up as anchors fall |
+| VICTORY | the ending and credits | medium shuffle, boogie bass, a playful major-sixth melody, a meow every four bars |
+
+The game sets the mood every tick (`music_mood()` in `src/game.c`). The sequencer applies a change only at the next bar line and keeps its position in the 12-bar form, so the band never restarts. The exceptions are silence, the sad phrase and the first bars after a silence, which start at once. `mus_warp` corrupts the blues near the portal: at level 1 some lead notes slip a semitone or a tritone; at 2 drum hits are pushed a step late and the portal groans every other bar; at 3 the tempo also rises. The basement plays at warp 1 and the portal chamber at 2. The leaders' fight starts clean and becomes more distorted as their combined health drops (above 66%: 0; 33–66%: 2; below 33%: 3). `mus_layers` builds the finale crescendo.
+
+Effects are 4-byte steps (instrument, note, volume, ticks) on voices 6–7. Roach skittering is the lowest priority and never interrupts another effect.
 
 ## 9. Testing
 
@@ -194,10 +254,13 @@ The AUDIO block holds four 84-sample PCM waves tuned to C4 (pulse, saw, triangle
 | exits cannot activate prematurely | `test_exit_locked`: before and during the boss fight |
 | death and restart reset the level | `test_restart` |
 | progression reaches every level, the portal and the ending | `test_progression` |
-| portal sequence | `test_portal_needs_leaders`, and `test_progression` breaks the anchors |
-| cats alone can win | `test_cats_can_win`: a bot clears all 12 levels using only A |
+| portal sequence | `test_portal_needs_leaders`; `test_finale` (inside `test_progression`) plays the whole finale: reveal, nodes, Ralph's escape, anchors sealed until he is safe, the stabilizer surviving a single hit, the full volley, the cats' return, silence, then the victory blues |
+| adaptive music | `test_music`: moods for calm, alert and combat; changes only on bar lines; the leaders' health phases; the sad drop at the reveal |
+| cats alone can win | `test_cats_can_win`: a bot clears all 12 levels, finale included, using only A (it goes back for dazed cats, as a player would) |
 | rendering | `test_render_smoke`, plus the soak's frequent draws under the sanitizers |
 | robustness | `test_soak`: random input on every level |
+
+The tests are deterministic: `CC_SEED=n build/test_game` replays them with another random seed. Seeds 1, 777, 9001, 12345 and 424242 all pass.
 
 `tests/run_tests.sh shots` saves every screen as PNG from the host framebuffer, which is pixel-identical to the cartridge's strips. `scripts/qemu_preview.py` runs the real cartridge on the PRG32 QEMU firmware with scripted input and saves framebuffer dumps and the audio stream.
 
@@ -208,4 +271,5 @@ These notes come from SpaceBeltMadness and were confirmed here:
 1. The host builder still checks portable cartridges against 32 KiB, while the firmware defaults to 64 KiB. `tools/prg32_cli_64.py` raises only the host-side check.
 2. The synth bit layout differs from the `PRG32_AUDIO_SYNTH_*` macros (see section 8).
 3. The QEMU firmware needs an SDL display (headless via `SDL_VIDEODRIVER=offscreen`) for presents to complete.
-4. The firmware's fast `memcpy` path for 8-bit sprites requires a palette that maps onto itself. A 216-colour cube palette does not, so strips take the per-pixel path, which is still cheap next to the SPI transfer.
+4. **Load size.** Before starting a cartridge, the firmware copies its header, code/data and AUDIO block into one temporary heap block. In the QEMU firmware a 55.5 KB image failed with "out of memory reading cartridge", while 54.5 KB loaded. That limit is tighter than the 64 KiB RAM window, and bss does not count towards it.
+5. The firmware's fast `memcpy` path for 8-bit sprites requires a palette that maps onto itself. A 216-colour cube palette does not, so strips take the per-pixel path, which is still cheap next to the SPI transfer.

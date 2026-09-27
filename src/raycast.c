@@ -29,7 +29,7 @@ static uint16_t ray_vstep[NRAYS];      /* texels per pixel, Q12 */
 static uint16_t ray_tex[NRAYS];        /* byte offset of the texel column */
 static uint8_t ray_pal[NRAYS];         /* palette of the wall texture */
 static uint8_t ray_shift[NRAYS], ray_shade[NRAYS], ray_anim[NRAYS];
-static uint8_t sky_h[NRAYS], sky_idx[NRAYS];
+static uint8_t sky_idx[NRAYS];
 
 /* Camera (set from the player every frame). Direction and plane are Q12. */
 static int32_t cam_x, cam_y;
@@ -161,22 +161,22 @@ static void cast_rays(void) {
         ray_top[c] = (int16_t)(HORIZON - h / 2);
         ray_bot[c] = (int16_t)(HORIZON - h / 2 + h);
         ray_vstep[c] = (uint16_t)((16u << 12) / (uint32_t)h);
-        ray_tex[c] = (uint16_t)(tex_defs[tex][0] * 128 + (u >> 1));
-        ray_shift[c] = (u & 1) ? 0 : 4;
+        int pat = tex_pat[tex_defs[tex][0]], two = pat & 0x80;
+        ray_tex[c] = (uint16_t)((pat & 0x7f) * 64 + (two ? u >> 2 : u >> 1));
+        ray_shift[c] = (uint8_t)(two ? 0x80 | (6 - 2 * (u & 3)) : ((u & 1) ? 0 : 4));
         ray_pal[c] = tex_defs[tex][1];
         ray_shade[c] = (uint8_t)IMIN(4, shade_for(perp) + side);
         ray_anim[c] = (tex == TEX_SWIRL || tex == TEX_GROWTH) ? (uint8_t)anim : 0;
         int heading = (cam_ang + ((c - NRAYS / 2) * FOV_UNITS) / NRAYS) & 1023;
         sky_idx[c] = (uint8_t)(heading >> 3);
-        sky_h[c] = skyline[heading >> 3];
     }
     for (int y = 0; y < VIEW_H; ++y) row_shade[y] = (uint8_t)shade_for(row_dist[y]);
 }
 
 static uint8_t sky_pixel(int c, int y) {
-    int idx = sky_idx[c];
-    if (y >= HORIZON - sky_h[c]) {
-        if (sky_h[c] > 2 && ((y * 7 + idx * 13) % 9) == 0 && y < HORIZON - 1) return sky_window;
+    int idx = sky_idx[c], sh = skyline[idx];
+    if (y >= HORIZON - sh) {
+        if (sh > 2 && ((y * 7 + idx * 13) % 9) == 0 && y < HORIZON - 1) return sky_window;
         return sky_building;
     }
     if (sky_stars && ((idx * 31 + y * 17) & 127) == 5) return sky_stars;
@@ -186,21 +186,24 @@ static uint8_t sky_pixel(int c, int y) {
 /* Walls, floor and ceiling for rows sy..sy+h-1 of the 3D view. */
 static void world_strip(int sy, int h) {
     int holes = lv->hazard == HAZ_HOLES;
-    uint8_t lut[16];
+    uint8_t lut[8];
     for (int r = 0; r < h; ++r) {
         int y = sy + r;
         uint8_t *row = strip + r * SW;
         int ceiling = y < HORIZON;
         int sky = ceiling && lv->sky != SKY_NONE;
         const uint8_t *fpat = 0;
+        int ftwo = 0;
         int32_t fx = 0, fy = 0, fsx = 0, fsy = 0;
         if (!sky) {
             int tex = ceiling ? lv->ceil_tex : lv->floor_tex;
-            const uint8_t *pal = pal_sets[tex_defs[tex][1]];
+            const uint8_t *pal = tex_pals[tex_defs[tex][1]];
             const uint8_t *sh = shade_tab[row_shade[y]];
             int32_t d = row_dist[y];
-            fpat = tex_patterns[tex_defs[tex][0]];
-            for (int k = 0; k < 16; ++k) lut[k] = sh[pal[k]];
+            int pat = tex_pat[tex_defs[tex][0]];
+            fpat = tex_blob + (pat & 0x7f) * 64;
+            ftwo = pat & 0x80;
+            for (int k = 0; k < 8; ++k) lut[k] = sh[pal[k]];
             fsx = (d * 2 * cam_px / NRAYS) >> 4;
             fsy = (d * 2 * cam_py / NRAYS) >> 4;
             fx = (cam_x << 8) + ((d * (cam_dx - cam_px)) >> 4) + fsx / 2;
@@ -210,13 +213,16 @@ static void world_strip(int sy, int h) {
             uint8_t col;
             if (y >= ray_top[c] && y < ray_bot[c]) {
                 int v = ((int)(((uint32_t)(y - ray_top[c]) * ray_vstep[c]) >> 12) + ray_anim[c]) & 15;
-                int nib = (((const uint8_t *)tex_patterns)[ray_tex[c] + (v << 3)] >> ray_shift[c]) & 15;
-                col = shade_tab[ray_shade[c]][pal_sets[ray_pal[c]][nib]];
+                int b = ray_shift[c];
+                int nib = (b & 0x80) ? (tex_blob[ray_tex[c] + (v << 2)] >> (b & 7)) & 3
+                                     : (tex_blob[ray_tex[c] + (v << 3)] >> b) & 15;
+                col = shade_tab[ray_shade[c]][tex_pals[ray_pal[c]][nib]];
             } else if (sky) {
                 col = sky_pixel(c, y);
             } else {
                 int u = (int)(fx >> 12) & 15, v = (int)(fy >> 12) & 15;
-                col = lut[(fpat[(v << 3) | (u >> 1)] >> ((u & 1) ? 0 : 4)) & 15];
+                col = ftwo ? lut[(fpat[(v << 2) | (u >> 2)] >> (6 - 2 * (u & 3))) & 3]
+                           : lut[(fpat[(v << 3) | (u >> 1)] >> ((u & 1) ? 0 : 4)) & 15];
                 if (holes && !ceiling) {
                     int mx = (int)(fx >> 16), my = (int)(fy >> 16);
                     if ((unsigned)mx < (unsigned)map_w && (unsigned)my < (unsigned)map_h &&

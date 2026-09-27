@@ -161,9 +161,14 @@ static void bands_update(void) {
     } else if (state == ST_BOSS) {
         sp_str("DEFEAT THE BOSS! B SHIELDS, A POUNCES");
     } else if (state == ST_FINAL_PORTAL) {
-        sp_str("DESTROY THE ANCHORS: ");
-        sp_int(anchors_left);
-        sp_str(" LEFT");
+        /* one NUL-separated blob instead of a padded table */
+        static const char goals[] = "\0...\0BREAK THE CONTAINMENT NODES: \0PROTECT RALPH! HOLD B NEAR HIM"
+                                    "\0BREAK THE PORTAL ANCHORS: \0PRESS A: THE WHOLE ARMADA!\0RUN, CATS, RUN!";
+        const char *g = goals;
+        for (int k = 0; k < finale; ++k) g += str_len(g) + 1;
+        sp_str(g);
+        if (finale == FIN_NODES) sp_int(nodes_left);
+        if (finale == FIN_ANCHORS) sp_int(anchors_left);
     } else {
         sp_str("A: CAT  B: SHIELD  SELECT+DIR: STRAFE");
     }
@@ -304,13 +309,25 @@ static void dead_ops(void) {
     press_a(110, "A: TRY AGAIN    B: GIVE UP");
 }
 
+/* Three short lines of dialogue, a picture being worth the rest. */
+static void say(const char *who, const char *text, uint8_t col) {
+    banner_box(94, 36);
+    op_text(0, 100, 1, col, OPF_CENTER | OPF_SHADOW, who);
+    op_text(0, 114, str_len(text) > 16 ? 1 : 2, COL_TEXT, OPF_CENTER | OPF_SHADOW, text);
+}
+
 static void portal_ops(void) {
-    sp_begin();
-    sp_str("ANCHORS LEFT: ");
-    sp_int(anchors_left);
-    op_text(0, 4, 1, COL_PINK, OPF_CENTER | OPF_SHADOW, sp_end());
-    int phase = portal_timer % 150;
-    if (phase >= 105 && ((ticks >> 2) & 1)) {
+    int period = finale >= FIN_ANCHORS ? 110 : 150;
+    if (finale == FIN_REVEAL) {
+        if (finale_timer < 70) say("FED:", "RALPH?!", COL_PINK);
+        else if (finale_timer < 120) say("RALPH:", "FED!", COL_CYAN);
+        else say("FED:", "...I KNEW THIS BASEMENT WAS TROUBLE.", COL_PINK);
+        return;
+    }
+    if (finale == FIN_STABILIZER && ((ticks >> 3) & 1))
+        op_text(0, 24, 2, COL_GOLD, OPF_CENTER | OPF_SHADOW, "A: ALL CATS!");
+    int phase = portal_timer % period;
+    if (finale != FIN_COLLAPSE && phase >= period - 45 && ((ticks >> 2) & 1)) {
         op_text(0, 24, 2, COL_GREEN, OPF_CENTER | OPF_SHADOW, "PORTAL SURGE!");
         op_text(0, 44, 1, COL_TEXT, OPF_CENTER | OPF_SHADOW, "HOLD B: FELINE SHIELD");
     }
@@ -325,78 +342,32 @@ static void cats_row(int y, int n, int size) {
         op_sprite(SPR_CAT_SIT, PAL_CAT_ORANGE + k % 5, x0 + k * (size + 4), y, size, size, k & 1 ? VF_FLIP : 0);
 }
 
-static void title_ops(void) {
-    if (page == 0) {
-        op_text(0, 12, 3, CUBE(5, 3, 0), OPF_CENTER | OPF_SHADOW, "COCKROACHES");
-        op_text(0, 40, 3, COL_GREEN, OPF_CENTER | OPF_SHADOW, "CATHISTERIA");
-        op_text(0, 70, 1, COL_CYAN, OPF_CENTER, "A CAT-POWERED INVASION DEFENSE");
-        op_sprite(SPR_QUEEN_A, PAL_QUEEN, 6, 86, 88, 88, 0);
-        op_sprite(SPR_FED_FIERCE, PAL_FED, 124, 92, 72, 72, 0);
-        op_sprite(SPR_CAT_POUNCE, PAL_CAT_ORANGE, 222, 90, 80, 80, 0);
-        op_sprite(SPR_ROACH_A, PAL_ELITE, 96, 150, 28, 28, 0);
-        op_sprite(SPR_ROACH_B, PAL_SPITTER, 196, 152, 26, 26, VF_FLIP);
-        press_a(184, "PRESS A    B: HOW TO PLAY");
-    } else {
-        op_text(0, 10, 2, COL_GOLD, OPF_CENTER | OPF_SHADOW, "HOW TO PLAY");
-        op_text(24, 38, 1, COL_TEXT, 0, "UP/DOWN      WALK");
-        op_text(24, 50, 1, COL_TEXT, 0, "LEFT/RIGHT   TURN");
-        op_text(24, 62, 1, COL_TEXT, 0, "SELECT+L/R   STRAFE");
-        op_text(24, 74, 1, COL_TEXT, 0, "A            SEND A CAT");
-        op_text(24, 86, 1, COL_TEXT, 0, "B (HOLD)     FELINE SHIELD");
-        op_text(24, 98, 1, COL_TEXT, 0, "SELECT       PAUSE");
-        lines(118, COL_CYAN, "CATS COME BACK AFTER EACH ATTACK.", "THE SHIELD NEEDS REST TO REGROW.",
-              "RESCUE LOST CATS. EAT PIZZA.");
-        cats_row(158, 5, 20);
-        press_a(186, "PRESS A TO START");
-    }
-}
+/* Full-screen pages are data (pages/pages.txt -> page_items[]): each item
+ * is page, kind, visible-from, visible-to (ticks / 2), x / 2, y and four
+ * parameters. Text lives in level_text[] like the level strings. */
+#define PGK_FLIP 16
+#define PGK_DARK 32
+#define PGK_LEFT 64
 
-static void intro_ops(void) {
-    if (page == 0) {
-        lines(20, COL_GOLD, "HYDE PARK, CHICAGO.", "SOUTH HARPER AVENUE.", 0);
-        lines(56, COL_TEXT, "FED LIVES IN A THREE-STORY HOUSE", "WITH HER FORMIDABLE", "FELINE ARMADA.");
-        cats_row(110, 7, 26);
-    } else if (page == 1) {
-        lines(20, COL_TEXT, "ONE NIGHT, A PORTAL OPENS", "IN HER BASEMENT.", 0);
-        lines(56, COL_GREEN, "GIANT ALIEN COCKROACHES", "AND BEETLES POUR OUT.", 0);
-        op_sprite(SPR_QUEEN_A, PAL_QUEEN, 116, 90, 88, 88, 0);
-        op_sprite(SPR_BEETLE_A, PAL_BEETLE, 40, 120, 56, 56, 0);
-        op_sprite(SPR_ROACH_A, PAL_ROACH, 226, 124, 52, 52, VF_FLIP);
-    } else {
-        lines(16, COL_TEXT, "HUMANITY'S FIRST LINE OF DEFENSE", "IS A LOVELY, ECCENTRIC WOMAN.", 0);
-        lines(44, COL_GOLD, "HER CATS ARE HER WEAPONS.", 0, 0);
-        op_sprite(SPR_FED_FIERCE, PAL_FED, 124, 66, 72, 72, 0);
-        cats_row(146, 6, 24);
+static void page_ops(int pg, int t) {
+    for (int i = 0; i < PAGE_ITEMS; ++i) {
+        const uint8_t *it = page_items[i];
+        if (it[0] != pg || t < it[2] * 2 || (it[3] != 255 && t >= it[3] * 2)) continue;
+        int kind = it[1] & 15, x = it[4] * 2, y = it[5];
+        int off = (it[8] << 8) | it[9]; /* text items only */
+        switch (kind) {
+        case 0:
+            if (it[1] & PGK_LEFT) op_text(x, y, it[6], it[7], 0, level_text + off);
+            else op_text(0, y, it[6], it[7], OPF_CENTER | OPF_SHADOW, level_text + off);
+            break;
+        case 1:
+            op_sprite(it[6], it[7], x, y, it[8], it[9],
+                      ((it[1] & PGK_FLIP) ? VF_FLIP : 0) | ((it[1] & PGK_DARK) ? VF_DARK : 0));
+            break;
+        case 2: cats_row(y, it[6], it[7]); break;
+        case 3: op_rect(x, y, it[6] * 2, it[7], it[8]); break;
+        case 4: say(level_text + off, level_text + ((it[6] << 8) | it[4]), it[7]); break;
+        default: press_a(y, level_text + off); break;
+        }
     }
-    press_a(186, "PRESS A");
-}
-
-static void ending_ops(void) {
-    if (page == 0) {
-        int s = IMAX(8, 160 - state_timer * 2);
-        op_sprite(SPR_PORTAL, PAL_PORTAL, SW / 2 - s / 2, 90 - s / 2, s, s, (ticks >> 2) & 1 ? VF_FLIP : 0);
-        lines(160, COL_TEXT, "THE PORTAL COLLAPSES", "WITH A SMALL, SAD POP.", 0);
-    } else if (page == 1) {
-        lines(24, COL_TEXT, "THE BASEMENT FALLS SILENT.", "THE LAST ROACH EVAPORATES.", "FED DUSTS OFF HER CARDIGAN.");
-        op_sprite(SPR_FED_OK, PAL_FED, 124, 76, 72, 72, 0);
-    } else if (page == 2) {
-        lines(18, COL_TEXT, "SHE CLIMBS THE STAIRS.", "THE CATS FOLLOW AS IF NOTHING", "UNUSUAL HAPPENED.");
-        lines(60, COL_PINK, "THEY DEMAND DINNER. IMMEDIATELY.", 0, 0);
-        op_sprite(SPR_FED_OK, PAL_FED, 136, 80, 48, 48, 0);
-        cats_row(140, 9, 24);
-    } else {
-        op_text(0, 14, 3, COL_GOLD, OPF_CENTER | OPF_SHADOW, "HUMANITY");
-        op_text(0, 42, 3, COL_GREEN, OPF_CENTER | OPF_SHADOW, "SAVED");
-        lines(80, COL_TEXT, "COCKROACHES CATHISTERIA", "A PRG32 CARTRIDGE", 0);
-        lines(108, COL_CYAN, "CONCEPT: RAFFAELE MONTELLA", "CODE AND PIXELS: CLAUDE CODE", "UNIPARTHENOPE - RISC-V PRG32");
-        lines(146, COL_DIM, "NO CATS WERE HARMED.", "SEVERAL COUCHES WERE.", 0);
-    }
-    press_a(186, page < 3 ? "PRESS A" : "PRESS A FOR THE TITLE");
-}
-
-static void game_over_ops(void) {
-    op_text(0, 40, 3, COL_RED, OPF_CENTER | OPF_SHADOW, "GAME OVER");
-    lines(84, COL_TEXT, "THE ROACHES KEEP THE HOUSE.", "THE CATS MOVE IN WITH", "THE NEIGHBORS.");
-    op_sprite(SPR_CAT_SIT, PAL_CAT_BLACK, 144, 124, 32, 32, 0);
-    press_a(180, "PRESS A");
 }

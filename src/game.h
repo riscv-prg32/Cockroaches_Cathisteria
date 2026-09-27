@@ -27,7 +27,9 @@ enum {
 /* ---- level vocabulary used by the generated level_data.h --------------- */
 enum { SKY_NONE, SKY_DAY, SKY_DUSK, SKY_NIGHT };
 enum { HAZ_NONE, HAZ_DEBRIS, HAZ_HOLES, HAZ_DARK, HAZ_FLICKER, HAZ_PORTAL };
-enum { MUS_NONE, MUS_TITLE, MUS_EXPLORE, MUS_TENSE, MUS_BOSS, MUS_ENDING, MUS_COUNT };
+/* Music moods: variations of one Chicago blues theme (audio.c). */
+enum { MUS_NONE, MUS_EXPLORE, MUS_DANGER, MUS_COMBAT, MUS_BOSS, MUS_PORTAL, MUS_SAD,
+       MUS_RESCUE, MUS_CRESCENDO, MUS_VICTORY, MUS_COUNT };
 #define LF_DROP 1 /* enemies drop in from above (the chimney) */
 
 enum {
@@ -73,6 +75,8 @@ enum { AI_IDLE, AI_CHASE, AI_ATTACK, AI_SPIT, AI_CHARGE, AI_HURT, AI_DEAD };
 #define EF_OBJECTIVE 2  /* anchors: not part of any wave */
 #define EF_INVULN 4     /* shell up / anchor sealed */
 #define EF_EXPOSED 8    /* beetle belly or boss shell open: double damage */
+#define EF_NODE 16      /* finale: a containment node holding the prisoner */
+#define EF_STAB 32      /* finale: the stabilizer inside the portal */
 
 typedef struct {
     int32_t x, y;        /* Q8 map position */
@@ -102,7 +106,7 @@ typedef struct {
     uint8_t active, type, variant, wait; /* wait: ticks before it can be taken */
 } pickup_t;
 
-enum { PJ_SPIT, PJ_BOSS_SPIT, PJ_DEBRIS };
+enum { PJ_SPIT, PJ_BOSS_SPIT, PJ_DEBRIS, PJ_ZAP };
 
 typedef struct {
     int32_t x, y;
@@ -160,6 +164,12 @@ static puddle_t puddles[MAX_PUDDLES];
 static prop_t props[MAX_PROPS];
 static int nprops;
 
+/* The finale on the last level, after the leaders fall (game.c). Kept out of
+ * every earlier text on purpose: the prisoner is a surprise. */
+enum { FIN_NONE, FIN_REVEAL, FIN_NODES, FIN_PROTECT, FIN_ANCHORS, FIN_STABILIZER, FIN_COLLAPSE };
+static int finale, finale_timer, nodes_left, ralph_visible, ralph_stun, ralph_free, ralph_follow;
+static int32_t ralph_x, ralph_y;
+
 /* One-shot event counters, read by the tests. */
 static int ev_level_complete, ev_boss_defeated, ev_ending;
 
@@ -185,6 +195,7 @@ static void cats_launch(void);
 static void level_complete(void);
 static void boss_spawn_level(void);
 static void boss_think(enemy_t *e, int i);
+static int boss_is_risky(const enemy_t *e);
 static void proj_spawn(int type, int32_t x, int32_t y, int32_t tx, int32_t ty, int speed, int dmg);
 static void pickup_spawn(int type, int32_t x, int32_t y, int variant);
 static void puddle_spawn(int32_t x, int32_t y);

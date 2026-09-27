@@ -74,7 +74,38 @@ static int cat_find_target(void) {
     return best;
 }
 
+/* The finale: every cat at Fed's side leaps at the stabilizer at once. */
+static void cats_volley(void) {
+    int t = -1, n = 0;
+    for (int i = 0; i < MAX_ENEMIES; ++i)
+        if (enemies[i].active && enemies[i].state != AI_DEAD && (enemies[i].flags & EF_STAB)) t = i;
+    if (t < 0 || cats_ready() <= 0) return;
+    for (int i = 0; i < MAX_CATS && cats_ready() > 0; ++i) {
+        cat_t *k = &cats[i];
+        if (k->state != CAT_IDLE) continue;
+        k->state = CAT_OUT;
+        k->target = (uint8_t)t;
+        k->timer = 0;
+        k->variant = (uint8_t)(i % 5);
+        k->x = pl.x + (i - 4) * 24;
+        k->y = pl.y + (4 - i) * 12;
+        cats_out++;
+        n++;
+    }
+    enemies[t].flags &= (uint8_t)~EF_INVULN;
+    enemies[t].hp = enemies[t].maxhp = (int16_t)IMAX(1, n * 6); /* it takes them all */
+    pl.cat_cd = 30;
+    pl.leap = 8;
+    sfx(SFX_LAUNCH);
+    message(n > 1 ? "THE WHOLE ARMADA POUNCES!" : "ONE BRAVE CAT POUNCES!", 60);
+}
+
 static void cats_launch(void) {
+    if (finale == FIN_STABILIZER) {
+        if (!pl.cat_cd) cats_volley();
+        return;
+    }
+    if (finale == FIN_COLLAPSE) return; /* everyone is running home */
     if (cats_ready() <= 0 || pl.cat_cd || pl.shield_on) return;
     for (int i = 0; i < MAX_CATS; ++i) {
         cat_t *k = &cats[i];
@@ -103,7 +134,7 @@ static void cat_strike(cat_t *k, int i) {
      * bosses caught mid-attack. Plain roaches just get mauled. */
     int heavy = e->type == E_BEETLE || e->type == E_ARMORED || e->type == E_ELITE;
     int risky = (heavy && (e->state == AI_ATTACK || e->state == AI_CHARGE)) ||
-                (e->type == E_BOSS && e->bstate != 0);
+                (e->type == E_BOSS && boss_is_risky(e));
     if (e->flags & EF_INVULN) {
         sfx(SFX_BOING);
         k->state = CAT_RETURN;
@@ -139,9 +170,10 @@ static void cats_update(void) {
             }
             k->x = nx;
             k->y = ny;
-            /* Anything in the path gets it, not only the chosen target. */
+            /* A homing cat only strikes its target; a cat sent at nothing
+             * pounces on whatever it meets. */
             for (int i = 0; i < MAX_ENEMIES; ++i) {
-                if (!cat_can_target(i)) continue;
+                if (!cat_can_target(i) || (t != 255 && i != t)) continue;
                 int reach = (enemies[i].type == E_BOSS ? 150 : 90);
                 if (IABS(enemies[i].x - k->x) < reach && IABS(enemies[i].y - k->y) < reach) {
                     cat_strike(k, i);

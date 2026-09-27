@@ -69,28 +69,34 @@ static void level_load(int index) {
     map_h = lv->h;
     level_clear_objects();
     memset(map, 0, sizeof(map));
+    const uint8_t *rle = &level_maps[lv->map_off];
+    int run = 0, code = 0;
     for (int i = 0; i < map_w * map_h; ++i) {
-        int b = level_maps[lv->map_off + (i >> 1)];
-        int code = (i & 1) ? (b & 15) : (b >> 4);
+        if (run == 0) { /* run-length coded: (count - 1) << 4 | tile */
+            run = (*rle >> 4) + 1;
+            code = *rle++ & 15;
+        }
+        run--;
+        int tile = code;
         int32_t x = ((i % map_w) << 8) + 128, y = ((i / map_w) << 8) + 128;
-        switch (code) {
-        case T_CAT: pickup_spawn(PK_CAT, x, y, 0); code = T_EMPTY; break;
-        case T_HEALTH: pickup_spawn(PK_HEALTH, x, y, 0); code = T_EMPTY; break;
-        case T_FOOD: pickup_spawn(PK_FOOD, x, y, 0); code = T_EMPTY; break;
-        case T_YARN: pickup_spawn(PK_YARN, x, y, 0); code = T_EMPTY; break;
+        switch (tile) {
+        case T_CAT: pickup_spawn(PK_CAT, x, y, 0); tile = T_EMPTY; break;
+        case T_HEALTH: pickup_spawn(PK_HEALTH, x, y, 0); tile = T_EMPTY; break;
+        case T_FOOD: pickup_spawn(PK_FOOD, x, y, 0); tile = T_EMPTY; break;
+        case T_YARN: pickup_spawn(PK_YARN, x, y, 0); tile = T_EMPTY; break;
         case T_ANCHOR: {
             int e = enemy_spawn(E_ANCHOR, x, y, 0);
             if (e >= 0) enemies[e].flags |= EF_OBJECTIVE | EF_INVULN;
-            code = T_EMPTY;
+            tile = T_EMPTY;
             break;
         }
-        case T_BOSS: boss_x = x; boss_y = y; code = T_EMPTY; break;
+        case T_BOSS: boss_x = x; boss_y = y; tile = T_EMPTY; break;
         case T_EXIT: exit_x = x; exit_y = y; break;
         case T_PROP_A: prop_add(x, y, lv->props[0]); break;
         case T_PROP_B: prop_add(x, y, lv->props[1]); break;
         default: break;
         }
-        map[i] = (uint8_t)code;
+        map[i] = (uint8_t)tile;
     }
     pl.x = (lv->start_x << 8) + 128;
     pl.y = (lv->start_y << 8) + 128;
@@ -108,6 +114,7 @@ static void level_load(int index) {
     boss_defeated = bosses_spawned = 0;
     anchors_left = lv->hazard == HAZ_PORTAL ? 4 : 0;
     portal_timer = collapse = 0;
+    finale = finale_timer = nodes_left = ralph_visible = ralph_stun = ralph_free = ralph_follow = 0;
     flicker = quake = 0;
     squashed = 0;
     wave_spawn(1);

@@ -15,7 +15,7 @@ fog: 1
 walls: TEX_STONE TEX_PIPES TEX_GROWTH
 door: TEX_DOOR
 props: PROP_BOX PROP_HEATER
-music: MUS_TENSE
+music: MUS_PORTAL
 hazard: HAZ_FLICKER
 waves: 3
 boss: BOSS_FURNACE

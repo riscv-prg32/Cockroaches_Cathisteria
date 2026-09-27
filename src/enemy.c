@@ -93,7 +93,11 @@ static void enemy_kill(int i) {
     squashed++;
     sfx(SFX_DIE);
     if (e->type == E_ANCHOR) {
-        if (anchors_left > 0) anchors_left--;
+        if (e->flags & EF_NODE) {
+            if (nodes_left > 0) nodes_left--;
+        } else if (!(e->flags & EF_STAB) && anchors_left > 0) {
+            anchors_left--;
+        }
         quake = 10;
     }
     if ((e->flags & EF_BOSS) && enemies_alive(EF_BOSS, 0) == 0) on_boss_defeated();
@@ -301,11 +305,13 @@ static void enemy_sprite(const enemy_t *e, int i, int *spr, int *pal, int *flags
     *flags = e->flash ? VF_FLASH : 0;
     if (e->type == E_ANCHOR) {
         *spr = SPR_ANCHOR;
+        if (e->flags & (EF_NODE | EF_STAB)) *pal = PAL_NODE;
         if (e->flags & EF_INVULN) *flags |= VF_DARK;
         return;
     }
     if (e->state == AI_DEAD) {
-        *spr = beetle ? SPR_BEETLE_DEAD : SPR_ROACH_DEAD;
+        *spr = beetle ? SPR_BEETLE_OPEN : SPR_ROACH_ATK; /* squashed flat and dark */
+        *flags |= VF_DARK;
         return;
     }
     if (beetle) {

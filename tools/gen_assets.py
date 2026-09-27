@@ -260,6 +260,14 @@ cat_palette("cat_siamese", C(2, 1, 0), C(5, 4, 3), C(5, 5, 4), C(3, 2, 1), eye=C
 palette("fed", 0, C(0, 0, 0), C(0, 0, 0), C(1, 0, 0), C(2, 1, 0), C(5, 4, 3), C(4, 3, 2),
         C(4, 4, 4), C(4, 1, 1), C(5, 4, 0), C(5, 3, 3), C(5, 5, 5), C(4, 5, 5), C(3, 0, 0),
         C(5, 0, 4), C(3, 0, 3))
+# Ralph: hair 2-3, skin 4-5, glasses 6, polo 7-8, trousers 9-10, shoes 11,
+# eyes 12, stubble 13, watch 14. After the reference photo: short dark hair,
+# black rectangular glasses, a round face with a wry smile, white polo.
+palette("ralph", 0, C(0, 0, 0), C(1, 0, 0), C(4, 3, 3), C(5, 4, 3), C(4, 3, 2),
+        C(0, 0, 0), C(5, 5, 5), C(4, 4, 4), C(1, 1, 2), C(0, 0, 1), C(1, 1, 1), C(1, 0, 0),
+        C(3, 2, 2), C(1, 1, 1))
+palette("node", 0, C(0, 0, 0), C(0, 1, 1), C(0, 3, 2), C(1, 5, 3), C(4, 5, 5), C(3, 5, 1),
+        C(5, 5, 3), C(5, 5, 5), C(1, 1, 1), C(2, 2, 2))
 palette("items", 0, C(0, 0, 0), C(4, 2, 0), C(5, 3, 1), C(4, 5, 3), C(0, 2, 0), C(5, 4, 1),
         C(5, 5, 3), C(0, 2, 4), C(1, 4, 5), C(4, 4, 4), C(0, 4, 0), C(5, 2, 4), C(4, 0, 2),
         C(5, 4, 5), C(5, 5, 5))
@@ -967,6 +975,49 @@ def fed(expr: str) -> Canvas:
     return c
 
 
+def ralph() -> Canvas:
+    """Fed's husband: short dark hair, black rectangular glasses, round face
+    with a wry half-smile and stubble, white polo shirt, black smartwatch."""
+    c = Canvas(20, 32)
+    c.rect(6, 23, 9, 29, 9)                      # dark trousers
+    c.rect(11, 23, 14, 29, 9)
+    c.line(10, 23, 10, 28, 10)
+    c.rect(5, 30, 9, 31, 11)                     # shoes
+    c.rect(11, 30, 15, 31, 11)
+    c.poly([(3, 12), (17, 12), (16, 23), (4, 23)], 7)   # white polo
+    c.poly([(3, 12), (0, 20), (2, 21), (4, 15)], 7)     # sleeves and arms
+    c.poly([(17, 12), (20, 20), (18, 21), (16, 15)], 7)
+    c.rect(0, 20, 1, 22, 4)
+    c.rect(18, 20, 19, 22, 4)
+    c.rect(18, 19, 19, 19, 14)                   # smartwatch
+    c.line(4, 22, 16, 22, 8)
+    c.poly([(7, 12), (10, 14), (13, 12), (12, 11), (8, 11)], 8)   # polo collar
+    c.line(10, 14, 10, 17, 8)
+    c.rect(8, 11, 11, 12, 4)                     # neck
+    c.ellipse(9.5, 2.8, 5.8, 3.2, 2)             # short dark hair, on top
+    c.ellipse(9.5, 7, 5.6, 5.4, 4)               # big round face
+    c.ellipse(9.5, 1.8, 5.6, 2.3, 2)             # hair over the forehead
+    c.rect(4, 3, 15, 3, 2)                       # hairline
+    c.set(4, 4, 2)
+    c.set(15, 4, 2)
+    for x0 in (4, 10):                           # thin black rectangular glasses
+        c.rect(x0, 5, x0 + 5, 5, 6)
+        c.rect(x0, 8, x0 + 5, 8, 6)
+        c.rect(x0, 6, x0, 7, 6)
+        c.rect(x0 + 5, 6, x0 + 5, 7, 6)
+        c.set(x0 + 3 if x0 == 4 else x0 + 2, 6.4, 12)   # eyes, glancing aside
+        c.set(x0 + 3 if x0 == 4 else x0 + 2, 7, 3)
+    c.rect(9, 6, 10, 6, 6)                       # bridge
+    c.set(3, 6, 6)
+    c.set(16, 6, 6)
+    c.line(7, 10, 12, 10, 5)                     # wry half-smile
+    c.set(12, 9, 5)
+    for x, y in ((6, 11), (8, 12), (11, 12), (13, 11)):
+        c.set(x, y, 13)                          # stubble
+    c.outline(1)
+    return c
+
+
 def item(kind: str) -> Canvas:
     if kind == "pizza":
         # pizza alla Nerano: zucchini and provolone del Monaco, basil, no tomato
@@ -1146,11 +1197,9 @@ def prop(kind: str) -> Canvas:
 sprite("ROACH_A", roach("a"), "roach")
 sprite("ROACH_B", roach("b"), "roach")
 sprite("ROACH_ATK", roach("atk"), "roach")
-sprite("ROACH_DEAD", roach("dead"), "roach")
 sprite("BEETLE_A", beetle("a"), "beetle")
 sprite("BEETLE_B", beetle("b"), "beetle")
 sprite("BEETLE_OPEN", beetle("open"), "beetle")
-sprite("BEETLE_DEAD", beetle("dead"), "beetle")
 sprite("QUEEN_A", queen("a"), "queen")
 sprite("CAT_LEAP", cat_leap(), "cat_orange")
 sprite("CAT_POUNCE", cat_pounce(), "cat_orange")
@@ -1159,6 +1208,7 @@ sprite("CAT_DAZED", cat_dazed(), "cat_orange")
 sprite("FED_OK", fed("ok"), "fed")
 sprite("FED_OUCH", fed("ouch"), "fed")
 sprite("FED_FIERCE", fed("fierce"), "fed")
+sprite("RALPH", ralph(), "ralph")
 sprite("PIZZA", item("pizza"), "items")
 sprite("FOOD", item("food"), "items")
 sprite("YARN", item("yarn"), "items")
@@ -1242,8 +1292,8 @@ def hexrows(data: list[int], per: int = 16, indent: str = "    ") -> list[str]:
 
 
 def emit_header() -> str:
-    pal_names = list(PALETTES)
-    pal_id = {n: i for i, n in enumerate(pal_names)}
+    texture_only = {pal for _, _, pal in TEXTURES}
+    pal_names = [n for n in PALETTES if n not in texture_only]
     pat_names = list(PATTERNS)
     pat_id = {n: i for i, n in enumerate(pat_names)}
     out = [
@@ -1261,21 +1311,43 @@ def emit_header() -> str:
         out.append("    {" + ", ".join(str(v) for v in PALETTES[n]) + "},")
     out += ["};", ""]
 
-    out.append(f"/* 16x16 4-bpp wall/floor patterns, row-major, left pixel in the high nibble. */")
-    out.append(f"#define PATTERN_COUNT {len(pat_names)}")
-    out.append("static const uint8_t tex_patterns[PATTERN_COUNT][128] = {")
+    # Textures: 16x16 patterns at 2 bpp (at most 4 colours) or 4 bpp, in one
+    # blob; tex_pat[] holds offset / 64 and bit 7 set for 2 bpp. Texture
+    # palettes need only 8 entries (no pattern uses more).
+    tblob: list[int] = []
+    pat_code = []
     for n in pat_names:
-        out.append(f"    {{ /* {n} */")
-        out += hexrows(pack4(PATTERNS[n]), 16, "        ")
-        out.append("    },")
+        c = PATTERNS[n]
+        colours = max(v for r in c.px for v in r) + 1
+        assert colours <= 8, n
+        pat_code.append((len(tblob) // 64) | (0x80 if colours <= 4 else 0))
+        if colours <= 4:
+            flat = [v for r in c.px for v in r]
+            tblob += [(flat[i] << 6) | (flat[i + 1] << 4) | (flat[i + 2] << 2) | flat[i + 3]
+                      for i in range(0, len(flat), 4)]
+        else:
+            tblob += pack4(c)
+    tex_pals = sorted({pal for _, _, pal in TEXTURES}, key=list(PALETTES).index)
+    out.append("/* 16x16 wall/floor patterns, row-major, leftmost pixel in the high bits. */")
+    out.append(f"#define PATTERN_COUNT {len(pat_names)}")
+    out.append(f"static const uint8_t tex_blob[{len(tblob)}] = {{")
+    out += hexrows(tblob)
+    out += ["};", "static const uint8_t tex_pat[PATTERN_COUNT] = {"]
+    out.append("    " + ", ".join(f"0x{v:02x}" for v in pat_code) + ",")
+    out += ["};", ""]
+    out.append("enum {")
+    out += [f"    TPAL_{n.upper()}," for n in tex_pals]
+    out += ["    TPAL_COUNT", "};", "static const uint8_t tex_pals[TPAL_COUNT][8] = {"]
+    for n in tex_pals:
+        out.append("    {" + ", ".join(str(v) for v in PALETTES[n][:8]) + "},")
     out += ["};", ""]
     out.append("enum {")
     out += [f"    TEX_{n}," for n, _, _ in TEXTURES]
     out += ["    TEX_COUNT", "};", ""]
-    out.append("/* Texture = pattern + palette. */")
+    out.append("/* Texture = pattern + texture palette. */")
     out.append("static const uint8_t tex_defs[TEX_COUNT][2] = {")
     for n, p, pal in TEXTURES:
-        out.append(f"    {{{pat_id[p]}, PAL_{pal.upper()}}}, /* {n} */")
+        out.append(f"    {{{pat_id[p]}, TPAL_{pal.upper()}}}, /* {n} */")
     out += ["};", ""]
 
     offsets, blob = [], []
@@ -1311,10 +1383,10 @@ def emit_header() -> str:
         out.append("    {" + ", ".join(f"0x{v:02x}" for v in g) + "},")
     out += ["};", ""]
 
-    sin = [round(math.sin(i * math.pi / 512.0) * 16384) for i in range(257)]
-    out.append("/* Quarter-wave sine, angle units of 1/1024 turn, Q14. */")
-    out.append("static const int16_t sin_q14[257] = {")
-    for i in range(0, 257, 12):
+    sin = [round(math.sin(i * math.pi / 128.0) * 16384) for i in range(65)]
+    out.append("/* Quarter-wave sine in 65 steps of 4/1024 turn, Q14 (isin interpolates). */")
+    out.append("static const int16_t sin_q14[65] = {")
+    for i in range(0, 65, 12):
         out.append("    " + ", ".join(str(v) for v in sin[i:i + 12]) + ",")
     out += ["};", ""]
 
@@ -1324,7 +1396,7 @@ def emit_header() -> str:
     for i in range(0, 128, 16):
         out.append("    " + ", ".join(str(v) for v in sky[i:i + 16]) + ",")
     out += ["};", "", "#endif", ""]
-    return "\n".join(out), len(blob), len(pat_names) * 128
+    return "\n".join(out), len(blob), len(tblob)
 
 
 # --------------------------------------------------------------------------
@@ -1386,7 +1458,7 @@ def audio() -> None:
         "tri": [int(128 + 90 * (1 - 4 * abs(i / n - 0.5))) for i in range(n)],
     }
     rng = random.Random(99)
-    waves["noise"] = [rng.randrange(40, 216) for _ in range(512)]
+    waves["noise"] = [rng.randrange(40, 216) for _ in range(160)]
     for name, data in waves.items():
         (samples / f"{name}.u8").write_bytes(bytes(data))
 

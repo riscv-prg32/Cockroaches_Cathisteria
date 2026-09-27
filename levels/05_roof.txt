@@ -15,7 +15,7 @@ fog: 3
 walls: TEX_BRICK TEX_PARAPET TEX_DORMER
 door: TEX_DOOR
 props: PROP_ANTENNA PROP_BIN
-music: MUS_TENSE
+music: MUS_EXPLORE
 hazard: HAZ_HOLES
 waves: 2
 boss: BOSS_GUTTER

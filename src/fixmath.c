@@ -33,12 +33,17 @@ void *memcpy(void *dst, const void *src, size_t n) {
 }
 #endif
 
+static int sin_quarter(int q) { /* q in 0..256, linear between table steps */
+    int i = q >> 2, f = q & 3;
+    return f ? sin_q14[i] + (((sin_q14[i + 1] - sin_q14[i]) * f) >> 2) : sin_q14[i];
+}
+
 static int isin(int a) {
     a &= 1023;
-    if (a < 256) return sin_q14[a];
-    if (a < 512) return sin_q14[512 - a];
-    if (a < 768) return -sin_q14[a - 512];
-    return -sin_q14[1024 - a];
+    if (a < 256) return sin_quarter(a);
+    if (a < 512) return sin_quarter(512 - a);
+    if (a < 768) return -sin_quarter(a - 512);
+    return -sin_quarter(1024 - a);
 }
 
 static int icos(int a) { return isin(a + 256); }
@@ -87,7 +92,7 @@ static int rnd_range(int lo, int hi) { /* inclusive */
 }
 
 /* A bump-allocated string pool for text built during one frame. */
-static char str_pool[320];
+static char str_pool[256];
 static int str_used, str_mark;
 
 static void sp_reset(void) { str_used = 0; }

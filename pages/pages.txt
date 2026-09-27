@@ -1,0 +1,101 @@
+; Full-screen pages, compiled by tools/gen_levels.py into level_data.h.
+;
+;   page NAME                              start a page (PG_NAME in C)
+;   text  Y SCALE COLOUR "TEXT"            centred text with a shadow
+;   textl X Y SCALE COLOUR "TEXT"          left-aligned text, no shadow
+;   lines Y COLOUR "A" ["B" ["C"]]          up to three centred lines, 11 px apart
+;   spr   SPRITE PALETTE X Y W H [flip] [dark]
+;   cats  Y COUNT SIZE                     a row of sitting cats
+;   rect  X Y W H COLOUR
+;   say   COLOUR "WHO:" "TEXT"             a line of dialogue in a box
+;   blink Y "TEXT"                         blinking gold prompt
+;
+; Prefix an item with @FROM-TO (ticks since the page appeared) to show it
+; only in that window; @FROM- means "from then on".
+
+page TITLE
+text 12 3 ORANGE "COCKROACHES"
+text 40 3 GREEN "CATHISTERIA"
+text 70 1 CYAN "A CAT-POWERED INVASION DEFENSE"
+spr QUEEN_A QUEEN 6 86 88 88
+spr FED_FIERCE FED 124 92 72 72
+spr CAT_POUNCE CAT_ORANGE 222 90 80 80
+spr ROACH_A ELITE 96 150 28 28
+spr ROACH_B SPITTER 196 152 26 26 flip
+blink 184 "PRESS A    B: HOW TO PLAY"
+
+page HELP
+text 10 2 GOLD "HOW TO PLAY"
+textl 24 38 1 TEXT "UP/DOWN      WALK"
+textl 24 50 1 TEXT "LEFT/RIGHT   TURN"
+textl 24 62 1 TEXT "SELECT+L/R   STRAFE"
+textl 24 74 1 TEXT "A            SEND A CAT"
+textl 24 86 1 TEXT "B (HOLD)     FELINE SHIELD"
+textl 24 98 1 TEXT "SELECT       PAUSE"
+lines 118 CYAN "CATS COME BACK AFTER EACH ATTACK." "THE SHIELD NEEDS REST TO REGROW." "RESCUE LOST CATS. EAT PIZZA."
+cats 158 5 20
+blink 186 "PRESS A TO START"
+
+page INTRO0
+lines 20 GOLD "HYDE PARK, CHICAGO." "SOUTH HARPER AVENUE."
+lines 56 TEXT "FED LIVES IN A THREE-STORY HOUSE" "WITH HER FORMIDABLE" "FELINE ARMADA."
+cats 110 7 26
+blink 186 "PRESS A"
+
+page INTRO1
+lines 20 TEXT "ONE NIGHT, A PORTAL OPENS" "IN HER BASEMENT."
+lines 56 GREEN "GIANT ALIEN COCKROACHES" "AND BEETLES POUR OUT."
+spr QUEEN_A QUEEN 116 90 88 88
+spr BEETLE_A BEETLE 40 120 56 56
+spr ROACH_A ROACH 226 124 52 52 flip
+blink 186 "PRESS A"
+
+page INTRO2
+lines 16 TEXT "HUMANITY'S FIRST LINE OF DEFENSE" "IS A LOVELY, ECCENTRIC WOMAN."
+lines 44 GOLD "HER CATS ARE HER WEAPONS."
+spr FED_FIERCE FED 124 66 72 72
+cats 146 6 24
+blink 186 "PRESS A"
+
+; The ending. Page 0 also draws the shrinking portal (hud.c).
+page END0
+lines 160 TEXT "THE PORTAL COLLAPSES."
+@60- lines 171 DIM "SILENCE."
+blink 186 "PRESS A"
+
+page END1
+rect 0 118 320 82 FLOOR
+spr ROACH_ATK ROACH 20 138 40 26 dark
+spr BEETLE_OPEN ARMORED 262 136 44 28 flip dark
+spr SPLAT POISON 70 170 60 20
+spr FED_OK FED 108 38 48 48
+spr RALPH RALPH 168 38 30 48
+cats 150 9 22
+@0-50 say CYAN "RALPH:" "WHAT HAPPENED?"
+@50-100 say PINK "FED:" "COCKROACHES."
+@100-150 say CYAN "RALPH:" "...RIGHT."
+@150- say GOLD "" "MEOW."
+blink 186 "PRESS A"
+
+page END2
+spr PORTAL PORTAL 8 6 44 44 dark
+lines 10 GOLD "HUMANITY SAVED" "RALPH RESCUED" "THE PORTAL IS SEALED"
+text 44 1 GREEN "...FOR GOOD."
+@90- text 60 1 PINK "THE CATS WANT DINNER."
+spr FED_OK FED 92 84 64 64
+spr RALPH RALPH 168 84 40 64
+cats 152 9 22
+blink 186 "PRESS A"
+
+page END3
+lines 14 GOLD "COCKROACHES CATHISTERIA" "A PRG32 CARTRIDGE"
+lines 50 CYAN "CONCEPT: RAFFAELE MONTELLA" "CODE AND PIXELS: CLAUDE CODE" "UNIPARTHENOPE - RISC-V PRG32"
+lines 96 TEXT "STARRING FED, RALPH" "AND THE FELINE ARMADA"
+lines 130 DIM "NO CATS WERE HARMED." "SEVERAL COUCHES WERE."
+blink 186 "PRESS A FOR THE TITLE"
+
+page GAMEOVER
+text 40 3 RED "GAME OVER"
+lines 84 TEXT "THE ROACHES KEEP THE HOUSE." "THE CATS MOVE IN WITH" "THE NEIGHBORS."
+spr CAT_SIT CAT_BLACK 144 124 32 32
+blink 180 "PRESS A"

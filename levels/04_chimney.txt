@@ -15,7 +15,7 @@ fog: 1
 walls: TEX_SOOT TEX_SOOT TEX_BRICK
 door: TEX_DOOR
 props: PROP_BOX PROP_BOX
-music: MUS_TENSE
+music: MUS_EXPLORE
 hazard: HAZ_DEBRIS
 waves: 2
 boss: BOSS_SOOT

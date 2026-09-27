@@ -77,6 +77,19 @@ static void projectiles_update(void) {
         }
         p->x = nx;
         p->y = ny;
+        if (p->type == PJ_ZAP && ralph_free && IABS(p->x - ralph_x) < 90 && IABS(p->y - ralph_y) < 90) {
+            p->active = 0;
+            if (pl.shield_on && pl.shield > 8 && dist_q8(pl.x - ralph_x, pl.y - ralph_y) < 380) {
+                pl.shield -= 8; /* the feline barrier covers him too */
+                pl.shield_hit = 6;
+                sfx(SFX_SHIELD_HIT);
+            } else {
+                ralph_stun = 40;
+                sfx(SFX_HURT);
+                message("RALPH IS HIT! SHIELD HIM!", 45);
+            }
+            continue;
+        }
         if (IABS(p->x - pl.x) < 80 && IABS(p->y - pl.y) < 80) {
             p->active = 0;
             player_damage(p->dmg, DMG_POISON);

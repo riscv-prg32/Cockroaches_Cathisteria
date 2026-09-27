@@ -89,7 +89,7 @@ static void press(uint32_t button) {
 
 static void boot(void) {
     memset(fb, 0, sizeof(fb));
-    rng_state = 12345;
+    rng_state = getenv("CC_SEED") ? (uint32_t)atoi(getenv("CC_SEED")) : 12345; /* tests/run_tests.sh */
     prev_input = 0;
     cockroaches_init();
 }
@@ -98,6 +98,7 @@ static void start_level(int n) {
     boot();
     new_game();
     level_enter(n);
+    game_set_state(ST_LEVEL_START);
     game_set_state(ST_PLAYING);
 }
 
@@ -345,6 +346,46 @@ static void test_restart(void) {
     CHECK(state == ST_GAME_OVER, "B on the death screen should give up, state %d", state);
 }
 
+/* The finale, from the leaders' fall to the ending (called on the last level). */
+static void test_finale(void) {
+    CHECK(state == ST_FINAL_PORTAL && finale == FIN_REVEAL, "no reveal (state %d finale %d)", state, finale);
+    CHECK(anchors_left == 4 && ralph_visible && !ralph_free, "reveal setup");
+    ticks_n(0, 210);
+    CHECK(finale == FIN_NODES && nodes_left == 3, "nodes phase %d, nodes %d", finale, nodes_left);
+    /* the portal cannot be sealed before Ralph is out */
+    for (int i = 0; i < MAX_ENEMIES; ++i)
+        if (enemies[i].active && enemies[i].type == E_ANCHOR && !(enemies[i].flags & EF_NODE))
+            enemy_damage(i, 999, 1);
+    CHECK(anchors_left == 4, "anchors broke while Ralph was trapped (%d)", anchors_left);
+    kill_all(EF_NODE, 0);
+    tick(0);
+    CHECK(finale == FIN_PROTECT && ralph_free, "Ralph not released (finale %d)", finale);
+    for (int t = 0; t < 3000 && finale == FIN_PROTECT; ++t) {
+        pl.health = 100;
+        tick(0);
+    }
+    CHECK(finale == FIN_ANCHORS, "Ralph never reached safety (finale %d, at %d,%d)", finale,
+          (int)ralph_x, (int)ralph_y);
+    kill_all(EF_OBJECTIVE, EF_NODE | EF_STAB);
+    tick(0);
+    CHECK(anchors_left == 0 && finale == FIN_STABILIZER, "anchors %d finale %d", anchors_left, finale);
+    for (int i = 0; i < MAX_ENEMIES; ++i)
+        if (enemies[i].active && (enemies[i].flags & EF_STAB)) enemy_damage(i, 999, 1);
+    CHECK(enemies_alive(EF_STAB, 0) == 1, "the stabilizer fell to a single hit");
+    int ready = cats_ready();
+    press(PRG32_BTN_A);
+    CHECK(cats_out == ready && ready > 0, "volley sent %d of %d cats", cats_out, ready);
+    for (int t = 0; t < 600 && state == ST_FINAL_PORTAL; ++t) {
+        pl.health = 100;
+        tick(0);
+    }
+    CHECK(state == ST_ENDING && ev_ending == 1, "no ending (state %d, finale %d)", state, finale);
+    CHECK(cats_out == 0, "cats left behind in the portal: %d", cats_out);
+    CHECK(mus_song == MUS_NONE, "the portal closes in silence (mood %d)", mus_song);
+    ticks_n(0, 50);
+    CHECK(mus_song == MUS_VICTORY, "no victory blues (mood %d)", mus_song);
+}
+
 static void test_progression(void) {
     printf("progression reaches every level, the portal and the ending\n");
     boot();
@@ -370,14 +411,7 @@ static void test_progression(void) {
             ticks_n(0, 40);
             press(PRG32_BTN_A);
         } else {
-            CHECK(state == ST_FINAL_PORTAL, "portal level: state %d", state);
-            CHECK(anchors_left == 4, "anchors %d", anchors_left);
-            ticks_n(0, 200);
-            CHECK(state == ST_FINAL_PORTAL, "portal ended early (state %d)", state);
-            kill_all(EF_OBJECTIVE, 0);
-            CHECK(anchors_left == 0, "anchors left %d", anchors_left);
-            ticks_n(0, 120);
-            CHECK(state == ST_ENDING && ev_ending == 1, "no ending (state %d)", state);
+            test_finale();
         }
         if (failures > 10) return;
     }
@@ -401,6 +435,50 @@ static void test_portal_needs_leaders(void) {
     CHECK(clear_level(), "no leader fight");
     CHECK(bosses_spawned == 2, "expected two leaders, got %d", bosses_spawned);
     CHECK(state == ST_FINAL_PORTAL, "state %d", state);
+}
+
+static void test_music(void) {
+    printf("the blues band follows the action\n");
+    start_level(0);
+    level_clear_objects();
+    ticks_n(0, 40);
+    CHECK(mus_song == MUS_EXPLORE, "calm: mood %d", mus_song);
+    /* a mood change waits for the bar line and never restarts the song */
+    int bar = mus_bar;
+    music_play(MUS_COMBAT);
+    CHECK(mus_song == MUS_EXPLORE || mus_step == 0, "changed mid-bar");
+    for (int i = 0; i < 400 && mus_song != MUS_COMBAT; ++i) {
+        music_tick();
+        if (mus_song == MUS_COMBAT) CHECK(mus_step == 1, "changed off the bar line (step %d)", mus_step);
+    }
+    CHECK(mus_song == MUS_COMBAT && mus_bar != bar, "no change at the next bar");
+    /* alerted roaches: danger, then combat when they close in */
+    start_level(0);
+    for (int i = 0; i < MAX_ENEMIES; ++i)
+        if (enemies[i].active) enemies[i].state = AI_CHASE, enemies[i].x = pl.x + 6 * ONE;
+    tick(0);
+    CHECK(mus_next == MUS_DANGER, "alert: next mood %d", mus_next);
+    pl.hurt = 5;
+    tick(0);
+    CHECK(mus_next == MUS_COMBAT, "hurt: next mood %d", mus_next);
+    /* the leaders: heavy blues, then dissonance, then fast and unstable */
+    start_level(LEVEL_COUNT - 1);
+    kill_all(0, EF_BOSS | EF_OBJECTIVE);
+    ticks_n(0, 60);
+    kill_all(0, EF_BOSS | EF_OBJECTIVE);
+    ticks_n(0, 200);
+    CHECK(state == ST_BOSS && mus_next == MUS_BOSS && mus_warp == 0, "boss: %d warp %d", mus_next, mus_warp);
+    for (int i = 0; i < MAX_ENEMIES; ++i)
+        if (enemies[i].active && (enemies[i].flags & EF_BOSS)) enemies[i].hp = enemies[i].maxhp / 2;
+    tick(0);
+    CHECK(mus_warp == 2, "half health warp %d", mus_warp);
+    for (int i = 0; i < MAX_ENEMIES; ++i)
+        if (enemies[i].active && (enemies[i].flags & EF_BOSS)) enemies[i].hp = enemies[i].maxhp / 5;
+    tick(0);
+    CHECK(mus_warp == 3, "low health warp %d", mus_warp);
+    kill_all(EF_BOSS, 0);
+    tick(0);
+    CHECK(mus_song == MUS_SAD, "the reveal drops to the sad phrase at once (%d)", mus_song);
 }
 
 /* A bot that fights only with cats: it aims at the nearest enemy, holds A,
@@ -427,6 +505,13 @@ static void test_cats_can_win(void) {
                 }
             }
             uint32_t in = PRG32_BTN_A;
+            for (int i = 0; i < MAX_PICKUPS; ++i) /* go back for dazed cats */
+                if (pickups[i].active && pickups[i].type == PK_DAZED && !pickups[i].wait &&
+                    can_stand(pickups[i].x, pickups[i].y, PLAYER_R) && !enemy_blocks(pickups[i].x, pickups[i].y, PLAYER_R)) {
+                    pl.x = pickups[i].x;
+                    pl.y = pickups[i].y;
+                    break;
+                }
             if (best >= 0) {
                 const enemy_t *e = &enemies[best];
                 if (!line_of_sight(pl.x, pl.y, e->x, e->y) || bd > 6 * ONE) {
@@ -434,6 +519,7 @@ static void test_cats_can_win(void) {
                     for (int k = 0; k < 8; ++k) {
                         int32_t nx = e->x + icos(k * 128) * 2 / 64, ny = e->y + isin(k * 128) * 2 / 64;
                         if (can_stand(nx, ny, PLAYER_R) && tile_at(nx, ny) != T_HOLE &&
+                            !enemy_blocks(nx, ny, PLAYER_R) &&
                             line_of_sight(nx, ny, e->x, e->y)) {
                             pl.x = nx;
                             pl.y = ny;
@@ -642,19 +728,39 @@ static void shots(const char *dir) {
     ticks_n(0, 3);
     draw_now();
     shot(dir, "41_complete");
+    /* the finale */
     start_level(LEVEL_COUNT - 1);
     clear_level();
+    pl.x = portal_x + ONE;
+    pl.y = portal_y + 4 * ONE;
+    ticks_n(0, 100);
+    draw_now();
+    shot(dir, "42_reveal");
+    ticks_n(0, 115);
+    face_enemy();
+    draw_now();
+    shot(dir, "43_nodes");
+    kill_all(EF_NODE, 0);
+    ticks_n(0, 70);
+    draw_now();
+    shot(dir, "44_protect");
+    for (int t = 0; t < 3000 && finale == FIN_PROTECT; ++t) {
+        pl.health = 100;
+        tick(0);
+    }
+    kill_all(EF_OBJECTIVE, EF_NODE | EF_STAB);
+    ticks_n(0, 2);
     pl.x = portal_x;
     pl.y = portal_y + 4 * ONE;
     pl.ang = 768;
-    portal_timer = 110;
+    press(PRG32_BTN_A);
     ticks_n(0, 3);
     draw_now();
-    shot(dir, "42_portal");
+    shot(dir, "45_volley");
     game_set_state(ST_ENDING);
     for (int p = 0; p < 4; ++p) {
         page = p;
-        state_timer = 30;
+        state_timer = p == 1 ? 70 : p == 2 ? 100 : 30;
         draw_now();
         snprintf(name, sizeof(name), "5%d_ending", p);
         shot(dir, name);
@@ -709,6 +815,7 @@ int main(int argc, char **argv) {
     test_portal_needs_leaders();
     test_progression();
     test_cats_can_win();
+    test_music();
     test_render_smoke();
     test_soak(soak);
     printf("%d checks, %d failures\n", checks, failures);
