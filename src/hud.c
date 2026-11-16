@@ -170,7 +170,7 @@ static void bands_update(void) {
         if (finale == FIN_NODES) sp_int(nodes_left);
         if (finale == FIN_ANCHORS) sp_int(anchors_left);
     } else {
-        sp_str("A: CAT  B: SHIELD  SELECT+DIR: STRAFE");
+        sp_str("A: CAT  B: SHIELD  B+LEFT/RIGHT: STRAFE");
     }
     band_text(PRG32_BAND_BOTTOM, sp_end());
 }

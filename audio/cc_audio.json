@@ -1,97 +1,166 @@
 {
-  "comment": "Cockroaches Cathisteria AUDIO block: four PCM waves and seven instruments. Music and effects are sequenced by the cartridge (src/audio.c).",
-  "samples": [
-    {
-      "file": "samples/pulse.u8",
-      "base_note": 60,
-      "loop": true
-    },
-    {
-      "file": "samples/saw.u8",
-      "base_note": 60,
-      "loop": true
-    },
-    {
-      "file": "samples/tri.u8",
-      "base_note": 60,
-      "loop": true
-    },
-    {
-      "file": "samples/noise.u8",
-      "base_note": 60,
-      "loop": true
-    }
-  ],
+  "comment": "Cockroaches Cathisteria AUDIO block: sixteen SID-like synth instruments. Music and effects are sequenced by the cartridge (src/audio.c).",
+  "samples": [],
   "instruments": [
     {
-      "name": "PULSE",
-      "sample_id": 0,
-      "default_volume": 220,
-      "default_pan": 0,
-      "attack": 0,
-      "decay": 0,
-      "sustain": 255,
-      "release": 0
-    },
-    {
-      "name": "SAW",
-      "sample_id": 1,
-      "default_volume": 220,
-      "default_pan": 0,
-      "attack": 0,
-      "decay": 0,
-      "sustain": 255,
-      "release": 0
-    },
-    {
-      "name": "TRI",
-      "sample_id": 2,
-      "default_volume": 220,
-      "default_pan": 0,
-      "attack": 0,
-      "decay": 0,
-      "sustain": 255,
-      "release": 0
-    },
-    {
-      "name": "NOISE",
-      "sample_id": 3,
-      "default_volume": 220,
-      "default_pan": 0,
-      "attack": 0,
-      "decay": 0,
-      "sustain": 255,
-      "release": 0
-    },
-    {
       "name": "BASS",
-      "sample_id": 40720,
+      "sample_id": 35414,
       "default_volume": 220,
       "default_pan": 0,
       "attack": 1,
-      "decay": 60,
-      "sustain": 150,
+      "decay": 70,
+      "sustain": 120,
       "release": 30
     },
     {
       "name": "KICK",
-      "sample_id": 40832,
+      "sample_id": 33440,
       "default_volume": 220,
       "default_pan": 0,
       "attack": 0,
-      "decay": 30,
+      "decay": 42,
       "sustain": 0,
-      "release": 10
+      "release": 12
+    },
+    {
+      "name": "SNARE",
+      "sample_id": 34787,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 48,
+      "sustain": 0,
+      "release": 24
+    },
+    {
+      "name": "HAT",
+      "sample_id": 33763,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 16,
+      "sustain": 0,
+      "release": 8
+    },
+    {
+      "name": "HARP",
+      "sample_id": 34638,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 14,
+      "decay": 70,
+      "sustain": 170,
+      "release": 40
+    },
+    {
+      "name": "GUITAR",
+      "sample_id": 35617,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 1,
+      "decay": 95,
+      "sustain": 110,
+      "release": 50
+    },
+    {
+      "name": "ORGAN",
+      "sample_id": 33506,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 5,
+      "decay": 0,
+      "sustain": 255,
+      "release": 30
+    },
+    {
+      "name": "BELL",
+      "sample_id": 33760,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 90,
+      "sustain": 50,
+      "release": 70
     },
     {
       "name": "BOOM",
-      "sample_id": 40467,
+      "sample_id": 35235,
       "default_volume": 220,
       "default_pan": 0,
       "attack": 0,
-      "decay": 110,
+      "decay": 115,
       "sustain": 0,
-      "release": 40
+      "release": 45
+    },
+    {
+      "name": "ZAP",
+      "sample_id": 36810,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 50,
+      "sustain": 0,
+      "release": 12
+    },
+    {
+      "name": "HUM",
+      "sample_id": 36065,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 70,
+      "decay": 0,
+      "sustain": 255,
+      "release": 90
+    },
+    {
+      "name": "GROWL",
+      "sample_id": 36321,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 60,
+      "sustain": 90,
+      "release": 30
+    },
+    {
+      "name": "HISS",
+      "sample_id": 33571,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 2,
+      "decay": 32,
+      "sustain": 40,
+      "release": 30
+    },
+    {
+      "name": "ECHO",
+      "sample_id": 34394,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 10,
+      "decay": 60,
+      "sustain": 110,
+      "release": 60
+    },
+    {
+      "name": "SWEEP",
+      "sample_id": 34656,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 0,
+      "sustain": 255,
+      "release": 20
+    },
+    {
+      "name": "CHIME",
+      "sample_id": 35718,
+      "default_volume": 220,
+      "default_pan": 0,
+      "attack": 0,
+      "decay": 100,
+      "sustain": 0,
+      "release": 80
     }
   ]
 }

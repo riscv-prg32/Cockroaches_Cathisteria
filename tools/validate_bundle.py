@@ -3,7 +3,7 @@
 
 The Cartridge Store rebuilds every cartridge from the bundle (manifest
 metadata + icon + splash + colophon) and serves that rebuilt image to boards,
-so the rebuilt image must still fit the 64 KiB cartridge limit. This script
+so the rebuilt image must still fit the 128 KiB cartridge package limit. This script
 reuses CartridgeStore's own format module when the repository is available
 (CARTRIDGE_STORE_REPO, default ../CartridgeStore) and otherwise performs
 basic structural checks only.
@@ -17,7 +17,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-LIMIT = 64 * 1024
+LIMIT = 128 * 1024
 ROOT = Path(__file__).resolve().parents[1]
 
 

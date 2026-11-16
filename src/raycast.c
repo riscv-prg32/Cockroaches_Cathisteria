@@ -7,7 +7,9 @@
  * 8-row strips inside a 2,560-byte buffer of cube colour indices, and every
  * finished strip is sent to the firmware as one 8-bit indexed sprite
  * (prg32_sprite_draw_indexed). That keeps the ABI call count at ~25 per
- * frame and needs no framebuffer of our own in the 64 KiB cartridge RAM.
+ * frame and needs no 64,000-byte framebuffer of our own.
+ *
+ * Wall, floor and ceiling textures are 32x32 texels per tile (2 or 4 bpp).
  *
  * Palette: 216 RGB565 entries, one per cube colour, with components chosen
  * so the ESP32-C6 quantiser maps every entry back to the same cube colour.
@@ -125,7 +127,7 @@ static int tile_texture(int code) {
 
 static void cast_rays(void) {
     int32_t px = cam_x, py = cam_y;
-    int anim = (int)(ticks >> 1) & 15;
+    int anim = (int)ticks & 31;
     for (int c = 0; c < NRAYS; ++c) {
         int camx = ((2 * c + 1) * 4096) / NRAYS - 4096;
         int rdx = cam_dx + ((cam_px * camx) >> 12);
@@ -152,17 +154,17 @@ static void cast_rays(void) {
         int32_t perp = side == 0 ? sdx - ddx : sdy - ddy;
         if (perp < 16) perp = 16;
         int32_t wx = side == 0 ? py + ((perp * rdy) >> 12) : px + ((perp * rdx) >> 12);
-        int u = (int)(wx >> 4) & 15;
-        if ((side == 0 && rdx > 0) || (side == 1 && rdy < 0)) u = 15 - u;
+        int u = (int)(wx >> 3) & 31; /* 32 texels per tile */
+        if ((side == 0 && rdx > 0) || (side == 1 && rdy < 0)) u = 31 - u;
         int h = (WALL_S * 256) / perp;
         if (h < 2) h = 2;
         int tex = tile_texture(code);
         ray_z[c] = (uint16_t)IMIN(perp, 65535);
         ray_top[c] = (int16_t)(HORIZON - h / 2);
         ray_bot[c] = (int16_t)(HORIZON - h / 2 + h);
-        ray_vstep[c] = (uint16_t)((16u << 12) / (uint32_t)h);
+        ray_vstep[c] = (uint16_t)IMIN(65535u, (32u << 12) / (uint32_t)h);
         int pat = tex_pat[tex_defs[tex][0]], two = pat & 0x80;
-        ray_tex[c] = (uint16_t)((pat & 0x7f) * 64 + (two ? u >> 2 : u >> 1));
+        ray_tex[c] = (uint16_t)((pat & 0x7f) * 256 + (two ? u >> 2 : u >> 1));
         ray_shift[c] = (uint8_t)(two ? 0x80 | (6 - 2 * (u & 3)) : ((u & 1) ? 0 : 4));
         ray_pal[c] = tex_defs[tex][1];
         ray_shade[c] = (uint8_t)IMIN(4, shade_for(perp) + side);
@@ -201,7 +203,7 @@ static void world_strip(int sy, int h) {
             const uint8_t *sh = shade_tab[row_shade[y]];
             int32_t d = row_dist[y];
             int pat = tex_pat[tex_defs[tex][0]];
-            fpat = tex_blob + (pat & 0x7f) * 64;
+            fpat = tex_blob + (pat & 0x7f) * 256;
             ftwo = pat & 0x80;
             for (int k = 0; k < 8; ++k) lut[k] = sh[pal[k]];
             fsx = (d * 2 * cam_px / NRAYS) >> 4;
@@ -212,22 +214,22 @@ static void world_strip(int sy, int h) {
         for (int c = 0; c < NRAYS; ++c) {
             uint8_t col;
             if (y >= ray_top[c] && y < ray_bot[c]) {
-                int v = ((int)(((uint32_t)(y - ray_top[c]) * ray_vstep[c]) >> 12) + ray_anim[c]) & 15;
+                int v = ((int)(((uint32_t)(y - ray_top[c]) * ray_vstep[c]) >> 12) + ray_anim[c]) & 31;
                 int b = ray_shift[c];
-                int nib = (b & 0x80) ? (tex_blob[ray_tex[c] + (v << 2)] >> (b & 7)) & 3
-                                     : (tex_blob[ray_tex[c] + (v << 3)] >> b) & 15;
+                int nib = (b & 0x80) ? (tex_blob[ray_tex[c] + (v << 3)] >> (b & 7)) & 3
+                                     : (tex_blob[ray_tex[c] + (v << 4)] >> b) & 15;
                 col = shade_tab[ray_shade[c]][tex_pals[ray_pal[c]][nib]];
             } else if (sky) {
                 col = sky_pixel(c, y);
             } else {
-                int u = (int)(fx >> 12) & 15, v = (int)(fy >> 12) & 15;
-                col = ftwo ? lut[(fpat[(v << 2) | (u >> 2)] >> (6 - 2 * (u & 3))) & 3]
-                           : lut[(fpat[(v << 3) | (u >> 1)] >> ((u & 1) ? 0 : 4)) & 15];
+                int u = (int)(fx >> 11) & 31, v = (int)(fy >> 11) & 31;
+                col = ftwo ? lut[(fpat[(v << 3) | (u >> 2)] >> (6 - 2 * (u & 3))) & 3]
+                           : lut[(fpat[(v << 4) | (u >> 1)] >> ((u & 1) ? 0 : 4)) & 15];
                 if (holes && !ceiling) {
                     int mx = (int)(fx >> 16), my = (int)(fy >> 16);
                     if ((unsigned)mx < (unsigned)map_w && (unsigned)my < (unsigned)map_h &&
                         map[my * map_w + mx] == T_HOLE)
-                        col = (u + v) & 1 ? CUBE(0, 0, 1) : CUBE(0, 0, 0);
+                        col = ((u + v) >> 1) & 1 ? CUBE(0, 0, 1) : CUBE(0, 0, 0);
                 }
             }
             fx += fsx;

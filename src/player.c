@@ -3,10 +3,12 @@
  *
  * Controls (classic Doom-style movement):
  *   UP / DOWN       walk forward / back
- *   LEFT / RIGHT    turn (hold SELECT to strafe instead)
+ *   LEFT / RIGHT    turn (strafe while B is held)
  *   A               send a cat at the enemy in the crosshair (hold to repeat)
- *   B               hold to raise the feline shield
- *   SELECT (tap)    pause
+ *   B               hold to raise the feline shield; with LEFT/RIGHT, sidestep
+ *
+ * Only the digital joystick, A and B work in play (PLAY_BUTTONS); START is
+ * read on the title, game-over and ending screens only.
  *
  * The shield is one number, pl.shield. It drains while held and regrows
  * after a short delay when released; its maximum grows with the armada, so
@@ -177,7 +179,7 @@ static void pickup_spawn(int type, int32_t x, int32_t y, int variant) {
 
 static void player_update(uint32_t in) {
     int fwd = 0, strafe = 0, speed;
-    if (in & PRG32_BTN_SELECT) {
+    if (in & PRG32_BTN_B) { /* shield stance: sidestep behind the cats */
         if (in & PRG32_BTN_LEFT) strafe = -1;
         if (in & PRG32_BTN_RIGHT) strafe = 1;
     } else {

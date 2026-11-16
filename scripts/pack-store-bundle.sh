@@ -19,6 +19,8 @@ rm -rf "$stage"
 mkdir -p "$stage"
 cp "$repo_dir/assets/icon.png" "$stage/icon.png"
 cp "$repo_dir/assets/screenshot.png" "$stage/screenshot.png"
+# 60-second gameplay video recorded in QEMU (scripts/qemu_preview.py).
+cp "$repo_dir/assets/preview.mp4" "$stage/preview.mp4"
 for arch in esp32c6 qemu; do
   cart="$repo_dir/dist/$name-$arch.prg32"
   [[ -f "$cart" ]] || { echo "missing $cart; run scripts/build.sh first" >&2; exit 1; }
@@ -32,7 +34,7 @@ root, out = Path(sys.argv[1]), Path(sys.argv[2])
 manifest = json.loads((root / "metadata/metadata.json").read_text())
 manifest.pop("runtime", None)  # the store derives runtime per architecture
 manifest["colophon"] = json.loads((root / "metadata/colophon.json").read_text())
-manifest["assets"] = {"icon": "icon.png", "splash": "screenshot.png"}
+manifest["assets"] = {"icon": "icon.png", "splash": "screenshot.png", "preview": "preview.mp4"}
 manifest["architectures"] = [
     {"id": "esp32c6", "file": "cockroaches-esp32c6.prg32"},
     {"id": "qemu", "file": "cockroaches-qemu.prg32"},
@@ -45,4 +47,5 @@ rm -f "$bundle"
   --manifest "$stage/manifest.json" --out "$bundle")
 
 python3 "$repo_dir/tools/validate_bundle.py" "$bundle"
+(cd "$repo_dir/dist" && shasum -a 256 "$name-esp32c6.prg32" "$name-qemu.prg32" "$(basename "$bundle")" > SHA256SUMS)
 echo "$bundle"

@@ -140,7 +140,7 @@ typedef struct {
 } checkpoint_t;
 
 /* ---- global state ------------------------------------------------------ */
-static int state, state_timer, paused;
+static int state, state_timer, paused; /* paused stays 0: no pause in play */
 static int level;                 /* 0..LEVEL_COUNT-1 */
 static const level_def_t *lv;     /* runtime pointer: fine outside tables */
 static uint8_t map[MAP_CELLS];
@@ -214,7 +214,7 @@ enum { DMG_BITE, DMG_POISON, DMG_DEBRIS, DMG_SHOCK, DMG_PUDDLE, DMG_FALL, DMG_PO
 enum {
     SFX_LAUNCH, SFX_MEOW, SFX_HIT, SFX_DIE, SFX_SPIT, SFX_SHIELD_ON, SFX_SHIELD_HIT,
     SFX_HURT, SFX_PICKUP, SFX_WARN, SFX_DOOR, SFX_SKITTER, SFX_BOING, SFX_PULSE,
-    SFX_COLLAPSE, SFX_FALL, SFX_UI, SFX_THUD, SFX_COUNT
+    SFX_COLLAPSE, SFX_FALL, SFX_UI, SFX_THUD, SFX_GROAN, SFX_COUNT
 };
 
 #endif

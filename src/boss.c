@@ -106,7 +106,7 @@ static void boss_think(enemy_t *e, int i) {
     if (e->state == AI_IDLE && e->z > 0) { /* drop-in entrance */
         e->z = (int16_t)IMAX(0, e->z - 20);
         if (!e->z) {
-            sfx(SFX_THUD);
+            sfx_at(SFX_THUD, e->x, e->y);
             quake = 8;
             e->state = AI_CHASE;
         }
@@ -118,7 +118,7 @@ static void boss_think(enemy_t *e, int i) {
         sp_str(b->name);
         sp_str(" IS ENRAGED!");
         message(sp_end(), 60);
-        sfx(SFX_WARN);
+        sfx_at(SFX_WARN, e->x, e->y);
     }
     switch (e->bstate) {
     case B_CHASE:
@@ -164,13 +164,13 @@ static void boss_think(enemy_t *e, int i) {
                 e->bstate = B_STUN;
                 e->btimer = 40;
                 e->flags |= EF_EXPOSED;
-                sfx(SFX_BOING);
+                sfx_at(SFX_BOING, e->x, e->y);
                 break;
             }
             e->bstate = B_CHASE;
             e->btimer = 70;
         } else if (blocked) {
-            sfx(SFX_THUD);
+            sfx_at(SFX_THUD, e->x, e->y);
             quake = 6;
             e->bstate = B_STUN;
             e->btimer = 40;
@@ -184,7 +184,7 @@ static void boss_think(enemy_t *e, int i) {
     case B_RAPID:
         if ((ticks & 7) == 0) {
             proj_spawn(PJ_BOSS_SPIT, e->x, e->y, pl.x, pl.y, 46, 10);
-            sfx(SFX_SPIT);
+            sfx_at(SFX_SPIT, e->x, e->y);
             if (--e->btimer == 0) {
                 e->bstate = B_CHASE;
                 e->btimer = 70;
@@ -200,7 +200,7 @@ static void boss_think(enemy_t *e, int i) {
                 proj_spawn(PJ_BOSS_SPIT, sx, sy, e->x + (icos(a) >> 4), e->y + (isin(a) >> 4), 36, 10);
             }
             puddle_spawn(e->x, e->y);
-            sfx(SFX_SPIT);
+            sfx_at(SFX_SPIT, e->x, e->y);
             e->bstate = B_CHASE;
             e->btimer = 80;
         }
@@ -216,7 +216,7 @@ static void boss_think(enemy_t *e, int i) {
                         if (m >= 0) enemies[m].z = 200;
                     }
                 }
-                sfx(SFX_SKITTER);
+                sfx_at(SFX_SKITTER, e->x, e->y);
             }
             e->bstate = B_CHASE;
             e->btimer = 90;
@@ -250,7 +250,7 @@ static void boss_think(enemy_t *e, int i) {
         }
         if (e->btimer == 0) {
             e->z = 0;
-            sfx(SFX_THUD);
+            sfx_at(SFX_THUD, e->x, e->y);
             quake = 12;
             if (dist_q8(pl.x - e->x, pl.y - e->y) < 420) player_damage(b->dmg + 4, DMG_SHOCK);
             e->bstate = B_STUN;

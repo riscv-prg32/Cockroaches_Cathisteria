@@ -136,12 +136,12 @@ static void cat_strike(cat_t *k, int i) {
     int risky = (heavy && (e->state == AI_ATTACK || e->state == AI_CHARGE)) ||
                 (e->type == E_BOSS && boss_is_risky(e));
     if (e->flags & EF_INVULN) {
-        sfx(SFX_BOING);
+        sfx_at(SFX_BOING, e->x, e->y);
         k->state = CAT_RETURN;
         return;
     }
     enemy_damage(i, pl.poison ? CAT_DAMAGE * 2 / 3 : CAT_DAMAGE, 1);
-    sfx(SFX_HIT);
+    sfx_at(SFX_HIT, e->x, e->y);
     k->state = CAT_MAUL;
     k->target = (uint8_t)i;
     k->timer = 8;

@@ -42,7 +42,7 @@
 #define VIEW_H 136
 #define HORIZON (VIEW_H / 2)
 #define NRAYS 160           /* one ray per 2-pixel column */
-#define STRIP_H 4           /* rows composed per blit */
+#define STRIP_H 8           /* rows composed per blit (2,560-byte strip) */
 #define HUD_Y VIEW_H
 
 /* Camera: plane length 0.66 (a 67 degree field of view). A wall one tile
@@ -72,6 +72,11 @@
 #define MAX_DEBRIS 3
 #define MAX_VIS 40
 #define MAX_OPS 36
+
+/* Gameplay reads only the digital joystick, A and B. START is accepted
+ * only on the title, game-over and ending screens. */
+#define PLAY_BUTTONS (PRG32_BTN_LEFT | PRG32_BTN_RIGHT | PRG32_BTN_UP | PRG32_BTN_DOWN | \
+                      PRG32_BTN_A | PRG32_BTN_B)
 
 #define IABS(v) ((v) < 0 ? -(v) : (v))
 #define IMIN(a, b) ((a) < (b) ? (a) : (b))

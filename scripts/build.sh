@@ -13,7 +13,8 @@ set -euo pipefail
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 prg32_repo="$(cd "${PRG32_REPO:-"$repo_dir/../PRG32"}" && pwd)"
 name="cockroaches"
-max_size=65536
+cart_ram_kib=128   # PRG32 large profile (default on ESP32-C6 and QEMU)
+max_size=131072    # one 128 KiB cartridge slot: code + audio + Store trailer
 
 if ! command -v riscv32-esp-elf-gcc >/dev/null 2>&1; then
   idf_export="${IDF_EXPORT:-$HOME/esp-idf/export.sh}"
@@ -36,17 +37,15 @@ build_dir="$repo_dir/build"
 dist_dir="$repo_dir/dist"
 mkdir -p "$build_dir" "$dist_dir"
 
-# The 64 KiB adapter raises the host builder's RAM check to the firmware's
-# default "extended" profile (see tools/prg32_cli_64.py).
 prg32() {
-  (cd "$prg32_repo" && PRG32_REPO="$prg32_repo" python3 "$repo_dir/tools/prg32_cli_64.py" "$@")
+  (cd "$prg32_repo" && python3 -m prg32 "$@")
 }
 
 # 1. Generated sources must be current (they are committed; this is cheap).
 python3 "$repo_dir/tools/gen_levels.py"
 python3 "$repo_dir/tools/gen_assets.py"
 
-# 2. AUDIO block: four PCM waves and seven instruments.
+# 2. AUDIO block: SID-like synth instruments (no PCM samples).
 python3 "$prg32_repo/tools/prg32audio_pack.py" \
   "$repo_dir/audio/cc_audio.json" \
   --out "$build_dir/cc_audio.block"
@@ -68,6 +67,7 @@ for arch in "${archs[@]}"; do
     --entry-prefix cockroaches \
     --name "$name" \
     --architecture "$arch" \
+    --cart-ram-kib "$cart_ram_kib" \
     --audio-block "$build_dir/cc_audio.block" \
     --build-dir "$build_dir" \
     --out "$raw"

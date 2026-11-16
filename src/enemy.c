@@ -91,7 +91,7 @@ static void enemy_kill(int i) {
     e->z = 0;
     e->flags &= (uint8_t)~(EF_INVULN | EF_EXPOSED);
     squashed++;
-    sfx(SFX_DIE);
+    sfx_at(SFX_DIE, e->x, e->y);
     if (e->type == E_ANCHOR) {
         if (e->flags & EF_NODE) {
             if (nodes_left > 0) nodes_left--;
@@ -108,7 +108,7 @@ static void enemy_damage(int i, int amount, int from_cat) {
     (void)from_cat;
     if (!e->active || e->state == AI_DEAD) return;
     if (e->flags & EF_INVULN) {
-        sfx(SFX_BOING);
+        sfx_at(SFX_BOING, e->x, e->y);
         return;
     }
     int armor = (e->flags & EF_EXPOSED) ? 8 : etypes[e->type].armor;
@@ -178,7 +178,7 @@ static void enemy_think(enemy_t *e) {
     case AI_IDLE:
         if (((ticks + e->anim) & 7) == 0 && d < 10 * ONE && line_of_sight(e->x, e->y, pl.x, pl.y)) {
             e->state = AI_CHASE;
-            if ((rnd() & 3) == 0) sfx(SFX_SKITTER);
+            if ((rnd() & 3) == 0) sfx_at(SFX_SKITTER, e->x, e->y);
         }
         break;
     case AI_CHASE:
@@ -200,7 +200,7 @@ static void enemy_think(enemy_t *e) {
             }
         } else {
             enemy_steer(e, pl.x, pl.y, t->speed);
-            if (((ticks + e->anim) & 63) == 0 && d < 5 * ONE) sfx(SFX_SKITTER);
+            if (((ticks + e->anim) & 63) == 0 && d < 5 * ONE) sfx_at(SFX_SKITTER, e->x, e->y);
         }
         break;
     case AI_ATTACK:
@@ -214,7 +214,7 @@ static void enemy_think(enemy_t *e) {
     case AI_SPIT:
         if (--e->timer == 0) {
             proj_spawn(PJ_SPIT, e->x, e->y, pl.x, pl.y, e->type == E_ELITE ? 44 : 34, 8);
-            sfx(SFX_SPIT);
+            sfx_at(SFX_SPIT, e->x, e->y);
             e->state = AI_CHASE;
             e->cd = (uint8_t)(t->spit_cd + (rnd() & 31));
         }
@@ -230,7 +230,7 @@ static void enemy_think(enemy_t *e) {
             int blocked = move_actor(&e->x, &e->y, e->vx, e->vy, t->radius * 3 / 4);
             if (d < t->radius + 80) {
                 if (pl.shield_on) {           /* bounces off the feline barrier */
-                    sfx(SFX_BOING);
+                    sfx_at(SFX_BOING, e->x, e->y);
                     player_damage(t->dmg, DMG_BITE);
                     e->state = AI_HURT;
                     e->timer = 45;
@@ -243,7 +243,7 @@ static void enemy_think(enemy_t *e) {
                     e->cd = 60;
                 }
             } else if (blocked) {             /* into a wall: dazed */
-                sfx(SFX_THUD);
+                sfx_at(SFX_THUD, e->x, e->y);
                 e->state = AI_HURT;
                 e->timer = 30;
                 e->flags |= EF_EXPOSED;
@@ -286,7 +286,7 @@ static void enemies_update(void) {
         if (e->state == AI_IDLE && e->z > 0) {
             e->z = (int16_t)IMAX(0, e->z - 24); /* dropping in from above */
             if (e->z == 0) {
-                sfx(SFX_THUD);
+                sfx_at(SFX_THUD, e->x, e->y);
                 e->state = AI_CHASE;
             }
             continue;

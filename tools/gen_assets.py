@@ -15,8 +15,10 @@ C(r, g, b) with components 0..5 and stored as the cube index r*36 + g*6 + b.
 The cartridge builds its RGB565 palette from the same cube (render.c), so the
 ESP32-C6 (which quantises to the cube) and QEMU show identical colours.
 
-Textures are 16x16 and sprites up to 32x32, both 4 bits per pixel with a
-16-entry palette of cube indices. Palette slot 0 of a sprite is transparent.
+Textures are 32x32 (designed at 16x16 and enlarged with detail, 2 or 4 bits
+per pixel, 8-entry palettes); sprites are up to 48x48 at 4 bits per pixel with
+a 16-entry palette of cube indices. Palette slot 0 of a sprite is transparent.
+The AUDIO block (audio/cc_audio.json) is sixteen synth instruments.
 """
 
 from __future__ import annotations
@@ -257,8 +259,11 @@ cat_palette("cat_gray", C(2, 2, 2), C(3, 3, 3), C(4, 4, 4), C(2, 2, 2), eye=C(1,
 cat_palette("cat_calico", C(1, 1, 1), C(5, 5, 5), C(5, 4, 3), C(5, 2, 0))
 cat_palette("cat_siamese", C(2, 1, 0), C(5, 4, 3), C(5, 5, 4), C(3, 2, 1), eye=C(0, 2, 5))
 # Fed (Federica): dark-brown wavy hair, thin light glasses, magenta dress.
-palette("fed", 0, C(0, 0, 0), C(0, 0, 0), C(1, 0, 0), C(2, 1, 0), C(5, 4, 3), C(4, 3, 2),
-        C(4, 4, 4), C(4, 1, 1), C(5, 4, 0), C(5, 3, 3), C(5, 5, 5), C(4, 5, 5), C(3, 0, 0),
+# slots: 1 outline 2 hair dark 3 hair 4 hair light 5 skin 6 skin shade
+#        7 glasses 8 lips 9 gold 10 blush 11 white 12 eye white 13 mouth
+#        14 dress 15 dress shade
+palette("fed", 0, C(1, 0, 0), C(1, 0, 0), C(2, 1, 0), C(3, 2, 1), C(5, 4, 3), C(4, 3, 2),
+        C(4, 4, 5), C(4, 1, 2), C(5, 4, 0), C(5, 3, 3), C(5, 5, 5), C(5, 5, 4), C(2, 0, 0),
         C(5, 0, 4), C(3, 0, 3))
 # Ralph: hair 2-3, skin 4-5, glasses 6, polo 7-8, trousers 9-10, shoes 11,
 # eyes 12, stubble 13, watch 14. After the reference photo: short dark hair,
@@ -290,7 +295,7 @@ palette("debris", 0, C(0, 0, 0), C(2, 0, 0), C(3, 1, 0), C(4, 1, 1), C(3, 3, 2),
 palette("fx", 0, C(5, 5, 5), C(5, 0, 0), C(5, 3, 0), C(5, 5, 0))
 
 # --------------------------------------------------------------------------
-# Textures: 16x16 patterns
+# Textures: 16x16 designs (enlarged to 32x32 below)
 # --------------------------------------------------------------------------
 
 T = 16
@@ -663,6 +668,305 @@ TEXTURES = [
 ]
 
 # --------------------------------------------------------------------------
+# 32x32 textures: each 16x16 design is enlarged with EPX (Scale2x), which
+# keeps edges crisp and rounds diagonals, then a per-pattern pass adds the
+# detail only the higher resolution can show: bevels, grain, finer noise.
+# --------------------------------------------------------------------------
+
+TH = 32
+HIRES: dict[str, Canvas] = {}
+DETAIL = {}
+
+
+def detail(name: str):
+    def deco(fn):
+        DETAIL[name] = fn
+        return fn
+    return deco
+
+
+def epx(c: Canvas) -> Canvas:
+    """Scale2x on a tiling pattern (neighbours wrap around)."""
+    w, h = c.w, c.h
+    out = Canvas(w * 2, h * 2)
+    g = lambda x, y: c.px[y % h][x % w]
+    for y in range(h):
+        for x in range(w):
+            p = g(x, y)
+            a, b, cc, d = g(x, y - 1), g(x + 1, y), g(x - 1, y), g(x, y + 1)
+            e0 = e1 = e2 = e3 = p
+            if cc == a and cc != d and a != b:
+                e0 = a
+            if a == b and a != cc and b != d:
+                e1 = b
+            if d == cc and d != b and cc != a:
+                e2 = cc
+            if b == d and b != a and d != cc:
+                e3 = d
+            out.px[2 * y][2 * x], out.px[2 * y][2 * x + 1] = e0, e1
+            out.px[2 * y + 1][2 * x], out.px[2 * y + 1][2 * x + 1] = e2, e3
+    return out
+
+
+def fine_noise(c: Canvas, rng, base: int, slots: list[int], weights: list[int]) -> None:
+    """Re-grain every `base` pixel at full resolution."""
+    for y in range(TH):
+        for x in range(TH):
+            if c.px[y][x] == base:
+                c.px[y][x] = rng.choices(slots, weights)[0]
+
+
+@detail("grass")
+def _(c, rng):
+    fine_noise(c, rng, 0, [0, 1, 2, 4], [6, 5, 2, 2])
+    fine_noise(c, rng, 1, [0, 1, 2], [3, 6, 2])
+    for _ in range(40):                                 # blades of grass
+        x, y = rng.randrange(TH), rng.randrange(3, TH)
+        h = rng.choice((2, 3, 3, 4))
+        for k in range(h):
+            c.set(x + (k == h - 1 and rng.random() < 0.5), y - k, 3 if k else 2)
+
+
+@detail("plaster")
+def _(c, rng):
+    fine_noise(c, rng, 0, [0, 1, 2], [20, 4, 1])
+    c.rect(0, 0, 31, 0, 2)                              # seam with a lit lip
+    c.rect(0, 1, 31, 1, 3)
+
+
+@detail("leaves")
+def _(c, rng):
+    for _ in range(30):                                 # sunlit leaf tips
+        x, y = rng.randrange(TH), rng.randrange(TH)
+        if c.get(x, y) == 1:
+            c.set(x, y, 4)
+            c.set(x + 1, y + 1, 3)
+
+
+@detail("organic")
+def _(c, rng):
+    fine_noise(c, rng, 0, [0, 1, 4], [7, 3, 2])
+    for y in range(TH):                                 # glistening veins
+        for x in range(TH):
+            if c.px[y][x] == 2 and c.get(x - 1, y) == 0 and rng.random() < 0.5:
+                c.px[y][x] = 3
+
+
+@detail("picket")
+def _(c, rng):
+    for y in range(TH):                                 # wood grain on the pickets
+        for x in range(TH):
+            if c.px[y][x] == 0 and (x * 7 + y // 5) % 11 == 0:
+                c.px[y][x] = 1
+    for x in range(0, TH, 8):                           # pointed tops
+        c.set(x + 1, 0, 2)
+        c.set(x + 5, 0, 2)
+
+
+@detail("siding")
+def _(c, rng):
+    for y in range(TH):
+        band = y % 8
+        for x in range(TH):
+            v = c.px[y][x]
+            if band == 7:
+                c.px[y][x] = 2                          # shadow under each board
+            elif band == 6:
+                c.px[y][x] = 1
+            elif band == 0:
+                c.px[y][x] = 3                          # lit board edge
+            elif v == 0 and (x * 13 + y * 7) % 23 == 0:
+                c.px[y][x] = 1                          # grain
+
+
+@detail("house")
+def _(c, rng):
+    for y in range(TH):                                 # siding shadows outside the window
+        for x in range(TH):
+            if c.px[y][x] in (0, 1, 2, 3) and not (4 <= x <= 27 and 2 <= y <= 27):
+                band = y % 8
+                c.px[y][x] = 2 if band == 7 else 3 if band == 0 else 1 if band == 6 else 0
+    for y in range(7, 23):                              # reflections in the glass
+        x = 9 + (y - 7) // 2
+        if c.get(x, y) == 5:
+            c.set(x, y, 6)
+            c.set(x + 1, y, 6)
+    c.rect(4, 27, 27, 27, 3)                            # sill highlight
+
+
+@detail("stone")
+def _(c, rng):
+    pts = [(rng.uniform(0, TH), rng.uniform(0, TH), rng.choice((0, 1, 3))) for _ in range(11)]
+    for y in range(TH):
+        for x in range(TH):
+            ds = []
+            for px, py, s in pts:
+                for ox in (-TH, 0, TH):
+                    for oy in (-TH, 0, TH):
+                        ds.append(((x - px - ox) ** 2 + (y - py - oy) ** 2, s, px + ox, py + oy))
+            ds.sort()
+            gap = ds[1][0] - ds[0][0]
+            if gap < 9:
+                c.px[y][x] = 2                          # mortar joint
+            elif gap < 20 and (y < ds[0][3] or x < ds[0][2]):
+                c.px[y][x] = 3 if ds[0][1] != 3 else 1  # lit upper-left rim
+            else:
+                c.px[y][x] = ds[0][1]
+    for _ in range(25):
+        x, y = rng.randrange(TH), rng.randrange(TH)
+        if c.px[y][x] in (0, 1):
+            c.px[y][x] = 2
+
+
+@detail("tile")
+def _(c, rng):
+    for y in range(TH):
+        for x in range(TH):
+            gx, gy = x % 16, y % 16
+            if 22 <= y <= 25:
+                continue                                # keep the decorative band
+            if gx == 15 or gy == 15:
+                c.px[y][x] = 2
+            elif gx == 0 or gy == 0:
+                c.px[y][x] = 1 if c.px[y][x] != 3 else 3
+            elif c.px[y][x] not in (3,):
+                c.px[y][x] = 0
+    for oy in (0, 16):
+        for ox in (0, 16):
+            for k in range(3):
+                c.set(ox + 2 + k, oy + 2, 1)
+                c.set(ox + 2, oy + 2 + k, 1)
+
+
+@detail("brick")
+def _(c, rng):
+    for y in range(TH):
+        row = y // 8
+        for x in range(TH):
+            xs = (x + (8 if row & 1 else 0)) % 16
+            if y % 8 == 7 or xs == 15:
+                c.px[y][x] = 3                          # mortar
+            elif y % 8 == 0 or xs == 0:
+                c.px[y][x] = 1                          # lit top and left edge
+            elif y % 8 == 6 or xs == 14:
+                c.px[y][x] = 2                          # shaded bottom and right
+            else:
+                c.px[y][x] = rng.choice((0, 0, 0, 0, 1, 2)) if rng.random() < 0.25 else 0
+    for _ in range(6):                                  # chips
+        x, y = rng.randrange(TH), rng.randrange(TH)
+        if c.px[y][x] == 0:
+            c.set(x, y, 2)
+            c.set(x + 1, y, 3)
+
+
+@detail("shingle")
+def _(c, rng):
+    for y in range(TH):
+        row = y // 8
+        for x in range(TH):
+            xs = (x + (6 if row & 1 else 0)) % 12
+            if y % 8 == 7 or xs == 11:
+                c.px[y][x] = 2
+            elif y % 8 == 6:
+                c.px[y][x] = 2 if (x + y) & 1 else 0
+            elif y % 8 == 0:
+                c.px[y][x] = 3
+            else:
+                c.px[y][x] = rng.choice((0, 0, 0, 1, 3))
+
+
+@detail("planks")
+def _(c, rng):
+    for x in range(TH):
+        col = x % 10
+        for y in range(TH):
+            if col == 9:
+                c.px[y][x] = 2                          # gap between boards
+            elif col == 0:
+                c.px[y][x] = 3                          # lit board edge
+            else:
+                wave = (y + int(3 * math.sin((x // 10) * 2.1 + y * 0.35))) % 7
+                c.px[y][x] = 1 if wave == 0 and col in (3, 6) else 0
+    for x in range(0, TH, 10):                          # nails and knots
+        y = rng.randrange(TH)
+        c.set(x + 2, y, 2)
+        c.set(x + 6, (y + 13) % TH, 2)
+        c.ellipse(x + 5, rng.randrange(4, 28), 1.2, 1.8, 1)
+
+
+@detail("beams")
+def _(c, rng):
+    fine_noise(c, rng, 0, [0, 1], [7, 1])
+    for y in range(0, 8):
+        for x in range(TH):
+            if (x * 5 + y * 11) % 17 == 0:
+                c.set(x, y, 1)
+
+
+@detail("carpet")
+def _(c, rng):
+    for y in range(TH):                                 # pile texture
+        for x in range(TH):
+            if c.px[y][x] == 0 and (x + 2 * y) % 5 == 0:
+                c.px[y][x] = 2
+
+
+@detail("stripes")
+def _(c, rng):
+    for y in range(TH):                                 # a damask dot on the wide stripes
+        for x in range(TH):
+            if c.px[y][x] == 0 and (x % 16) == 2 and y % 8 == 3:
+                c.set(x, y, 3)
+                c.set(x + 1, y + 1, 3)
+                c.set(x - 1, y + 1, 3)
+                c.set(x, y + 2, 3)
+
+
+@detail("swirl")
+def _(c, rng):
+    for y in range(TH):
+        for x in range(TH):
+            dx, dy = x - 15.5, y - 15.5
+            a = math.atan2(dy, dx)
+            r = math.hypot(dx, dy)
+            v = (a / (2 * math.pi) * 3 + r / 8.0) % 1.0
+            c.px[y][x] = [0, 1, 2, 3, 4, 3, 2, 1][int(v * 8) % 8]
+
+
+def _door_bevel(c):
+    for y in range(TH):                                 # sunken panels: shaded rim
+        for x in range(TH):
+            if c.px[y][x] == 2 and (c.get(x, y - 1) == 0 or c.get(x - 1, y) == 0):
+                c.px[y][x] = 1
+            elif c.px[y][x] == 0 and (x * 3 + y) % 13 == 0:
+                c.px[y][x] = 1                          # grain
+
+
+@detail("door")
+def _(c, rng):
+    _door_bevel(c)
+    c.rect(24, 18, 25, 21, 3)                           # brass knob with a glint
+    c.set(24, 18, 4)
+
+
+@detail("pipes")
+def _(c, rng):
+    fine_noise(c, rng, 0, [0, 1, 7], [7, 1, 2])
+
+
+def make_hires() -> None:
+    for name, c16 in PATTERNS.items():
+        c = epx(c16)
+        rng = random.Random(zlib.crc32(("hi" + name).encode()))
+        if name in DETAIL:
+            DETAIL[name](c, rng)
+        HIRES[name] = c
+
+
+make_hires()
+
+
+# --------------------------------------------------------------------------
 # Sprites
 # --------------------------------------------------------------------------
 
@@ -919,58 +1223,107 @@ def cat_dazed() -> Canvas:
 
 
 def fed(expr: str) -> Canvas:
-    """Fed, after Federica: shoulder-length dark wavy hair with a side part,
-    thin round light-framed glasses, a warm smile and a magenta dress."""
-    c = Canvas(24, 24)
-    rng = random.Random(7)
-    c.ellipse(12, 10, 9.5, 9, 3)                  # hair mass
-    for side in (-1, 1):                          # waves down to the shoulders
-        for k, y in enumerate((11, 14, 17, 19)):
-            c.ellipse(12 + side * (8.2 - (k & 1)), y, 2.6, 2.2, 3 if k & 1 else 2)
-    for _ in range(18):
-        c.set(rng.randrange(3, 21), rng.randrange(2, 20), rng.choice((2, 4)))
-    c.poly([(4, 24), (6, 20), (10, 19), (14, 19), (18, 20), (20, 24)], 5)   # shoulders
-    c.rect(9, 17, 14, 20, 5)                      # neck
-    c.line(7, 20, 6, 23, 14)                      # magenta dress straps
-    c.line(17, 20, 18, 23, 14)
-    c.poly([(7, 24), (8, 22), (16, 22), (17, 24)], 14)
-    c.line(8, 22, 16, 22, 15)
-    c.ellipse(12, 12, 5.8, 7, 5)                  # face
-    c.ellipse(12, 16, 4.2, 2.6, 6)                # jaw shade
-    c.ellipse(12, 12.5, 5.2, 5.6, 5)
-    c.poly([(5.5, 11), (7, 4.5), (13, 3), (19, 6), (18.5, 9), (14, 6.5), (9, 6.5), (7, 11)], 3)  # side part
-    c.line(9, 4, 13, 3, 4)
-    c.set(5.8, 15, 9)                             # earrings
-    c.set(18.2, 15, 9)
-    c.ellipse(8.5, 15, 1.2, 0.8, 10)              # cheeks
-    c.ellipse(15.5, 15, 1.2, 0.8, 10)
-    for cx in (9.2, 14.8):                        # thin round glasses
-        for a in range(0, 360, 20):
-            c.set(cx + 2.4 * math.cos(math.radians(a)), 11.5 + 2.1 * math.sin(math.radians(a)), 7)
-        c.set(cx - 1, 10.5, 12)
-    c.line(11.3, 11, 12.7, 11, 7)
-    c.line(6.4, 11, 5.6, 11, 7)
-    c.line(17.6, 11, 18.4, 11, 7)
-    if expr == "ok":
-        c.set(9.2, 11.7, 1)
-        c.set(14.8, 11.7, 1)
-        c.line(9.5, 15.5, 14.5, 15.5, 11)         # big warm smile
-        c.line(9, 15, 10, 16.3, 8)
-        c.line(15, 15, 14, 16.3, 8)
-        c.line(10, 16.4, 14, 16.4, 8)
+    """Fed, after Federica, as a 48x48 portrait shown 1:1 in the status bar:
+    shoulder-length dark wavy hair with a side part, warm brown eyes behind
+    thin round light-framed glasses, a warm smile, gold earrings and a
+    magenta dress."""
+    c = Canvas(48, 48)
+    # hair: a full wavy mass falling to the shoulders
+    c.ellipse(24, 21, 19, 18, 2)
+    for side in (-1, 1):
+        for k, y in enumerate((20, 25, 30, 35, 39)):
+            c.ellipse(24 + side * (17.5 - (k & 1) * 1.5), y, 4.6, 3.6, 3 if k & 1 else 2)
+    # neck and shoulders, dress
+    c.poly([(5, 48), (8, 42), (17, 39), (31, 39), (40, 42), (43, 48)], 5)
+    c.rect(19, 33, 28, 41, 5)
+    c.poly([(19, 36), (28, 36), (27, 40), (20, 40)], 6)          # shadow under the chin
+    c.poly([(9, 48), (11, 43), (18, 43), (24, 46), (30, 43), (37, 43), (39, 48)], 14)
+    c.line(11, 43, 13, 39, 14)                                    # straps
+    c.line(37, 43, 35, 39, 14)
+    c.line(18, 44, 24, 47, 15)
+    c.line(30, 44, 24, 47, 15)
+    # face: an oval with a softer jaw, shaded on its right side
+    c.ellipse(24, 23, 10.8, 12.5, 5)
+    c.ellipse(24, 28, 9.2, 8.6, 5)
+    for y in range(14, 37):
+        for x in range(24, 36):
+            if c.get(x, y) == 5 and c.get(x + 2, y) != 5:
+                c.set(x, y, 6)
+    # side-parted bangs sweeping right, with light strands
+    c.poly([(12.5, 25), (13, 15), (18, 9), (27, 7.5), (35, 11), (36.5, 19), (33, 14.5),
+            (27, 13), (21, 13.5), (16, 17), (14.5, 25)], 3)
+    c.poly([(30, 12), (35.5, 13), (36.5, 24), (34, 17)], 2)
+    for pts in (((16, 15), (22, 10)), ((21, 11), (28, 9)), ((28, 10), (33, 12)), ((8, 22), (9, 30)),
+                ((40, 22), (39, 31)), ((10, 33), (12, 37)), ((37, 34), (36, 38))):
+        (x0, y0), (x1, y1) = pts
+        c.line(x0, y0, x1, y1, 4)
+    c.set(23, 8, 4)
+    c.set(24, 8, 4)
+    # brows
+    if expr == "fierce":
+        c.line(15, 16.5, 21, 18.5, 1)
+        c.line(33, 16.5, 27, 18.5, 1)
     elif expr == "ouch":
-        c.line(8.2, 11.8, 10.2, 11.3, 1)
-        c.line(13.8, 11.3, 15.8, 11.8, 1)
-        c.ellipse(12, 16, 1.4, 1.5, 13)
-        c.set(19, 9, 12)
-        c.set(19, 10, 12)
-    else:  # fierce
-        c.line(7.5, 8.8, 10.5, 9.8, 1)
-        c.line(16.5, 8.8, 13.5, 9.8, 1)
-        c.set(9.2, 11.7, 1)
-        c.set(14.8, 11.7, 1)
-        c.rect(9, 15, 15, 16, 8)
-        c.line(10, 15.5, 14, 15.5, 11)
+        c.line(15, 18, 21, 16.5, 1)
+        c.line(33, 18, 27, 16.5, 1)
+    else:
+        c.line(15, 17, 18, 16, 2)
+        c.line(18, 16, 21, 16.5, 2)
+        c.line(27, 16.5, 30, 16, 2)
+        c.line(30, 16, 33, 17, 2)
+    # eyes
+    for cx in (18.5, 29.5):
+        if expr == "ouch":                                        # squeezed shut
+            c.line(cx - 2.5, 21, cx + 2.5, 22, 1)
+            c.line(cx - 2.5, 23, cx + 2.5, 22, 1)
+            continue
+        c.ellipse(cx, 21.6, 2.9, 1.6, 12)
+        c.ellipse(cx + 0.3, 21.6, 1.5, 1.6, 2)
+        c.set(cx + 0.3, 21.8, 1)
+        c.set(cx - 0.4, 21, 11)                                   # glint
+        c.line(cx - 3, 20, cx + 3, 20, 1)                         # upper lid and lashes
+        c.set(cx + 3.4, 19.5, 1)
+    # thin round glasses
+    for cx in (18.5, 29.5):
+        for a in range(0, 360, 8):
+            c.set(cx + 5.0 * math.cos(math.radians(a)), 21.8 + 4.3 * math.sin(math.radians(a)), 7)
+    c.line(22.6, 20.6, 25.4, 20.6, 7)
+    c.line(13.5, 21, 11.5, 21, 7)
+    c.line(34.5, 21, 36.5, 21, 7)
+    c.set(15.5, 19.5, 11)                                         # lens glint
+    c.set(26.5, 19.5, 11)
+    # nose
+    c.line(25, 23, 25.5, 27, 6)
+    c.set(23, 28, 6)
+    c.set(25, 28, 6)
+    # blush and earrings
+    c.ellipse(16.5, 28, 2, 1.1, 10)
+    c.ellipse(32, 28, 2, 1.1, 10)
+    for x in (13, 35):
+        c.set(x, 29, 9)
+        c.set(x, 31, 9)
+        c.set(x - 0.6, 30, 9)
+        c.set(x + 0.6, 30, 9)
+    # mouth
+    if expr == "ok":                                              # a big warm smile
+        c.poly([(19, 30.5), (29, 30.5), (27.5, 33.5), (24, 34.5), (20.5, 33.5)], 13)
+        c.rect(20, 31, 28, 31, 11)
+        c.line(18.5, 30.2, 29.5, 30.2, 8)
+        c.line(21, 34, 27, 34, 8)
+        c.set(18, 29.5, 6)
+        c.set(30, 29.5, 6)
+    elif expr == "ouch":
+        c.ellipse(24, 32, 2.2, 2.4, 13)
+        c.line(22, 29.6, 26, 29.6, 8)
+        c.set(37, 15, 12)                                         # a bead of sweat
+        c.set(37, 16, 12)
+        c.set(36.5, 17, 11)
+    else:                                                         # gritted teeth
+        c.rect(19, 30, 29, 33, 13)
+        c.rect(20, 31, 28, 32, 11)
+        c.line(24, 31, 24, 32, 12)
+        c.line(19, 29.5, 29, 29.5, 8)
+        c.line(19, 33.5, 29, 33.5, 8)
     c.outline(1)
     return c
 
@@ -1311,16 +1664,17 @@ def emit_header() -> str:
         out.append("    {" + ", ".join(str(v) for v in PALETTES[n]) + "},")
     out += ["};", ""]
 
-    # Textures: 16x16 patterns at 2 bpp (at most 4 colours) or 4 bpp, in one
-    # blob; tex_pat[] holds offset / 64 and bit 7 set for 2 bpp. Texture
+    # Textures: 32x32 patterns at 2 bpp (at most 4 colours) or 4 bpp, in one
+    # blob; tex_pat[] holds offset / 256 and bit 7 set for 2 bpp. Texture
     # palettes need only 8 entries (no pattern uses more).
     tblob: list[int] = []
     pat_code = []
     for n in pat_names:
-        c = PATTERNS[n]
+        c = HIRES[n]
         colours = max(v for r in c.px for v in r) + 1
         assert colours <= 8, n
-        pat_code.append((len(tblob) // 64) | (0x80 if colours <= 4 else 0))
+        assert len(tblob) % 256 == 0 and len(tblob) // 256 < 128
+        pat_code.append((len(tblob) // 256) | (0x80 if colours <= 4 else 0))
         if colours <= 4:
             flat = [v for r in c.px for v in r]
             tblob += [(flat[i] << 6) | (flat[i + 1] << 4) | (flat[i + 2] << 2) | flat[i + 3]
@@ -1328,7 +1682,7 @@ def emit_header() -> str:
         else:
             tblob += pack4(c)
     tex_pals = sorted({pal for _, _, pal in TEXTURES}, key=list(PALETTES).index)
-    out.append("/* 16x16 wall/floor patterns, row-major, leftmost pixel in the high bits. */")
+    out.append("/* 32x32 wall/floor patterns, row-major, leftmost pixel in the high bits. */")
     out.append(f"#define PATTERN_COUNT {len(pat_names)}")
     out.append(f"static const uint8_t tex_blob[{len(tblob)}] = {{")
     out += hexrows(tblob)
@@ -1428,10 +1782,12 @@ def previews() -> None:
     s = 4
     cols = 8
     rows = (len(TEXTURES) + cols - 1) // cols
-    sheet = Image.new("RGBA", (cols * (T * s + 4), rows * (T * s + 4)), (0, 0, 0, 255))
+    s = 2
+    sheet = Image.new("RGBA", (cols * (TH * s + 4), rows * (TH * s + 4)), (0, 0, 0, 255))
     for i, (n, p, pal) in enumerate(TEXTURES):
-        tile = render(PATTERNS[p], PALETTES[pal], False, s)
-        sheet.paste(tile, ((i % cols) * (T * s + 4), (i // cols) * (T * s + 4)))
+        tile = render(HIRES[p], PALETTES[pal], False, s)
+        sheet.paste(tile, ((i % cols) * (TH * s + 4), (i // cols) * (TH * s + 4)))
+    s = 4
     sheet.save(PREVIEW / "textures.png")
     cols = 8
     cell = 32 * s + 4
@@ -1448,40 +1804,46 @@ def previews() -> None:
 
 
 def audio() -> None:
-    """Four single-cycle 84-sample waves: at 22050 Hz a loop plays C4."""
-    samples = AUDIO_DIR / "samples"
-    samples.mkdir(parents=True, exist_ok=True)
-    n = 84
-    waves = {
-        "pulse": [200 if i < n // 4 else 56 for i in range(n)],
-        "saw": [int(40 + 176 * i / (n - 1)) for i in range(n)],
-        "tri": [int(128 + 90 * (1 - 4 * abs(i / n - 0.5))) for i in range(n)],
-    }
-    rng = random.Random(99)
-    waves["noise"] = [rng.randrange(40, 216) for _ in range(160)]
-    for name, data in waves.items():
-        (samples / f"{name}.u8").write_bytes(bytes(data))
+    """The AUDIO block: SID-like procedural instruments only, no PCM bytes.
+
+    Every voice is a firmware oscillator (triangle, saw, pulse or noise)
+    with an ADSR envelope and a resonant low-pass filter. The ids use the
+    documented layout decoded by current PRG32 firmware (PRG32_AUDIO_SYNTH_ID):
+    resonance 11:10, cutoff 9:6, pulse width 5:2, waveform 1:0. Envelope bytes
+    map quadratically from about 1 ms (1) to about 2 s (255).
+    The order must match the INS_* enum in src/audio.c.
+    """
+    TRI, SAW, PULSE, NOISE = 0, 1, 2, 3
 
     def synth(wave: int, pulse: int, cutoff: int, res: int) -> int:
-        # Bit layout decoded by prg32_audio_synth_start(): wave 1:0,
-        # resonance 6:4, cutoff 9:7, pulse width 13:10 (see docs/design.md).
-        assert res <= 3
-        return 0x8000 | wave | (res << 4) | (cutoff << 7) | (pulse << 10)
+        assert 0 <= res <= 3 and 0 <= cutoff <= 15 and 0 <= pulse <= 15
+        return 0x8000 | (res << 10) | (cutoff << 6) | (pulse << 2) | wave
 
     def ins(name, sid, a=0, d=0, s=255, r=0, vol=220):
         return {"name": name, "sample_id": sid, "default_volume": vol, "default_pan": 0,
                 "attack": a, "decay": d, "sustain": s, "release": r}
 
     cfg = {
-        "comment": "Cockroaches Cathisteria AUDIO block: four PCM waves and seven instruments. "
+        "comment": "Cockroaches Cathisteria AUDIO block: sixteen SID-like synth instruments. "
                    "Music and effects are sequenced by the cartridge (src/audio.c).",
-        "samples": [{"file": f"samples/{n}.u8", "base_note": 60, "loop": True}
-                    for n in ("pulse", "saw", "tri", "noise")],
+        "samples": [],
         "instruments": [
-            ins("PULSE", 0), ins("SAW", 1), ins("TRI", 2), ins("NOISE", 3),
-            ins("BASS", synth(0, 7, 6, 1), 1, 60, 150, 30),
-            ins("KICK", synth(0, 7, 7, 0), 0, 30, 0, 10),
-            ins("BOOM", synth(3, 7, 4, 1), 0, 110, 0, 40),
+            ins("BASS", synth(PULSE, 5, 9, 2), 1, 70, 120, 30),     # plucky resonant pulse bass
+            ins("KICK", synth(TRI, 8, 10, 0), 0, 42, 0, 12),        # low triangle thump
+            ins("SNARE", synth(NOISE, 8, 15, 1), 0, 48, 0, 24),     # bright noise burst
+            ins("HAT", synth(NOISE, 8, 15, 0), 0, 16, 0, 8),        # short high noise
+            ins("HARP", synth(PULSE, 3, 13, 1), 14, 70, 170, 40),   # harmonica: narrow pulse, soft attack
+            ins("GUITAR", synth(SAW, 8, 12, 2), 1, 95, 110, 50),    # bluesy saw with filter bite
+            ins("ORGAN", synth(PULSE, 8, 11, 0), 5, 0, 255, 30),    # square organ stab
+            ins("BELL", synth(TRI, 8, 15, 0), 0, 90, 50, 70),       # bright triangle, victory tunes
+            ins("BOOM", synth(NOISE, 8, 6, 2), 0, 115, 0, 45),      # explosions and thuds
+            ins("ZAP", synth(PULSE, 2, 15, 3), 0, 50, 0, 12),       # pickups and the UI
+            ins("HUM", synth(SAW, 8, 3, 3), 70, 0, 255, 90),        # portal drone
+            ins("GROWL", synth(SAW, 8, 7, 3), 0, 60, 90, 30),       # hurt, groans
+            ins("HISS", synth(NOISE, 8, 12, 0), 2, 32, 40, 30),     # spit and skitter
+            ins("ECHO", synth(PULSE, 6, 9, 1), 10, 60, 110, 60),    # the lead's delayed shadow
+            ins("SWEEP", synth(TRI, 8, 13, 1), 0, 0, 255, 20),      # sustained, for pitch slides
+            ins("CHIME", synth(PULSE, 1, 14, 2), 0, 100, 0, 80),    # glassy ping
         ],
     }
     (AUDIO_DIR / "cc_audio.json").write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")

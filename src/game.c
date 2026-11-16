@@ -16,7 +16,7 @@
  */
 
 static uint32_t last_ms, acc_ms, prev_in, pending;
-static int sel_down, sel_used, screen_dirty, world_static_drawn;
+static int screen_dirty, world_static_drawn;
 static int32_t portal_x, portal_y;
 static int combat_heat; /* ticks of combat music left after the last close call */
 
@@ -343,13 +343,8 @@ static void game_tick(uint32_t in, uint32_t pressed) {
         if ((state_timer & 15) == 0) screen_dirty = 1;
         if (pressed & (PRG32_BTN_A | PRG32_BTN_START)) {
             sfx(SFX_UI);
-            if (page == 1) {
-                new_game();
-                game_set_state(ST_INTRO);
-            } else {
-                new_game();
-                game_set_state(ST_INTRO);
-            }
+            new_game();
+            game_set_state(ST_INTRO);
         } else if (pressed & PRG32_BTN_B) {
             page ^= 1;
             screen_dirty = 1;
@@ -358,7 +353,7 @@ static void game_tick(uint32_t in, uint32_t pressed) {
         break;
     case ST_INTRO:
         if ((state_timer & 15) == 0) screen_dirty = 1;
-        if (pressed & (PRG32_BTN_A | PRG32_BTN_START | PRG32_BTN_B)) {
+        if (pressed & (PRG32_BTN_A | PRG32_BTN_B)) {
             sfx(SFX_UI);
             if (++page > 2 || (pressed & PRG32_BTN_B)) {
                 level_restart();
@@ -370,7 +365,7 @@ static void game_tick(uint32_t in, uint32_t pressed) {
         break;
     case ST_LEVEL_START:
         if ((state_timer & 15) == 0) screen_dirty = 1;
-        if ((state_timer > 15 && (pressed & (PRG32_BTN_A | PRG32_BTN_START))) || state_timer > 240) {
+        if ((state_timer > 15 && (pressed & PRG32_BTN_A)) || state_timer > 240) {
             game_set_state(ST_PLAYING);
             message(LV_TEXT(quip), 60);
         }
@@ -379,30 +374,15 @@ static void game_tick(uint32_t in, uint32_t pressed) {
     case ST_ROOM_CLEARED:
     case ST_BOSS:
     case ST_FINAL_PORTAL:
-        /* SELECT alone toggles pause; SELECT with a direction strafes. */
-        if (pressed & PRG32_BTN_SELECT) {
-            sel_down = 1;
-            sel_used = 0;
-        }
-        if (sel_down && (in & (PRG32_BTN_LEFT | PRG32_BTN_RIGHT))) sel_used = 1;
-        if (sel_down && !(in & PRG32_BTN_SELECT)) {
-            sel_down = 0;
-            if (!sel_used) {
-                paused = !paused;
-                screen_dirty = 1;
-                world_static_drawn = 0;
-            }
-        }
-        if (paused) {
-            state_timer--;
-            break;
-        }
+        /* In play only the joystick, A and B count: START/SELECT and the
+         * extra buttons are ignored (no pause, no modifier). */
+        in &= PLAY_BUTTONS;
         world_tick(in);
         if (world_state(state) && state != ST_PLAYER_DEAD && state != ST_LEVEL_COMPLETE) music_mood();
         break;
     case ST_PLAYER_DEAD:
         if ((state_timer & 15) == 0) screen_dirty = 1;
-        if (state_timer > 30 && (pressed & (PRG32_BTN_A | PRG32_BTN_START))) {
+        if (state_timer > 30 && (pressed & PRG32_BTN_A)) {
             level_restart();
             game_set_state(ST_LEVEL_START);
         } else if (state_timer > 30 && (pressed & PRG32_BTN_B)) {
@@ -411,7 +391,7 @@ static void game_tick(uint32_t in, uint32_t pressed) {
         break;
     case ST_LEVEL_COMPLETE:
         if ((state_timer & 15) == 0) screen_dirty = 1;
-        if ((state_timer > 30 && (pressed & (PRG32_BTN_A | PRG32_BTN_START))) || state_timer > 600) {
+        if ((state_timer > 30 && (pressed & PRG32_BTN_A)) || state_timer > 600) {
             level_enter(level + 1);
             game_set_state(ST_LEVEL_START);
         }

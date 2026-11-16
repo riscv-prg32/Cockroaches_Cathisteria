@@ -30,6 +30,14 @@ static char band_txt[2][48];
 uint32_t prg32_ticks_ms(void) { return sim_ms; }
 uint32_t prg32_input_read(void) { return sim_input; }
 void prg32_audio_note_on(uint8_t c, uint8_t i, uint8_t n, uint8_t v) { (void)c; (void)i; (void)n; (void)v; st_calls++; }
+static int last_pan_ch = -1, last_pan;
+static uint8_t last_pan_vol;
+void prg32_audio_note_on_pan(uint8_t c, uint8_t i, uint8_t n, uint8_t v, int8_t p) {
+    (void)n;
+    st_calls++;
+    if (i > INS_CHIME) fprintf(stderr, "bad instrument %d\n", i), exit(3);
+    if (c >= CH_SFX) last_pan_ch = c, last_pan = p, last_pan_vol = v;
+}
 void prg32_audio_note_off(uint8_t c) { (void)c; st_calls++; }
 void prg32_band_set_mode(uint8_t b, prg32_band_mode_t m) { (void)b; (void)m; }
 void prg32_band_set_colors(uint8_t b, uint16_t f, uint16_t g) { (void)b; (void)f; (void)g; }
@@ -162,12 +170,80 @@ static void test_walls(void) {
         for (int d = 0; d < 4; ++d) {
             pl.ang = d * 256 + 40;
             ticks_n(PRG32_BTN_UP, 120);
-            ticks_n(PRG32_BTN_UP | PRG32_BTN_SELECT | PRG32_BTN_LEFT, 60);
+            ticks_n(PRG32_BTN_UP | PRG32_BTN_B | PRG32_BTN_LEFT, 60);
             CHECK(can_stand(pl.x, pl.y, PLAYER_R - 1), "level %d dir %d: Fed inside a wall at %d,%d",
                   l, d, (int)pl.x, (int)pl.y);
             CHECK(pl.x > 0 && pl.y > 0 && pl.x < map_w * ONE && pl.y < map_h * ONE, "level %d outside map", l);
         }
     }
+}
+
+/* Play uses the digital joystick, A and B only; START works on menus. */
+static void test_controls(void) {
+    printf("play uses only the joystick, A and B; START only on menus\n");
+    start_level(0);
+    level_clear_objects();
+    int32_t x = pl.x, y = pl.y;
+    int ang = pl.ang;
+    ticks_n(PRG32_BTN_START | PRG32_BTN_C | PRG32_BTN_D | PRG32_BTN_L | PRG32_BTN_R, 40);
+    CHECK(state == ST_PLAYING && !paused, "START/extra buttons changed the play state (%d)", state);
+    CHECK(pl.x == x && pl.y == y && pl.ang == ang, "START/extra buttons moved Fed");
+    ticks_n(PRG32_BTN_START | PRG32_BTN_LEFT, 10);
+    CHECK(pl.ang != ang && pl.x == x && pl.y == y, "START+LEFT must turn, not strafe");
+    ang = pl.ang;
+    ticks_n(PRG32_BTN_B | PRG32_BTN_LEFT, 10);
+    CHECK(pl.ang == ang && (pl.x != x || pl.y != y), "B+LEFT must strafe");
+    CHECK(pl.shield_on, "B+LEFT keeps the shield up");
+    /* the level card and the death screen ignore START */
+    start_level(0);
+    game_set_state(ST_LEVEL_START);
+    ticks_n(0, 20);
+    press(PRG32_BTN_START);
+    CHECK(state == ST_LEVEL_START, "START skipped the level card");
+    press(PRG32_BTN_A);
+    CHECK(state == ST_PLAYING, "A starts the level");
+    game_set_state(ST_PLAYER_DEAD);
+    ticks_n(0, 40);
+    press(PRG32_BTN_START);
+    CHECK(state == ST_PLAYER_DEAD, "START acted on the death screen");
+    /* title and game over accept START */
+    game_set_state(ST_GAME_OVER);
+    ticks_n(0, 40);
+    press(PRG32_BTN_START);
+    CHECK(state == ST_TITLE, "START leaves game over");
+    ticks_n(0, 5);
+    press(PRG32_BTN_START);
+    CHECK(state == ST_INTRO, "START starts a game from the title");
+}
+
+/* Effects from the world are panned towards their source and fade with
+ * distance; Fed's own effects stay centred. */
+static void test_sfx_pan(void) {
+    printf("sound effects are panned towards their source\n");
+    start_level(0);
+    level_clear_objects();
+    pl.ang = 0; /* facing +x: +y is to Fed's right */
+    for (int side = -1; side <= 1; side += 2) {
+        sfxv[0].pos = sfxv[1].pos = 0xffff;
+        sfx_at(SFX_HIT, pl.x + ONE, pl.y + side * 3 * ONE);
+        last_pan_ch = -1;
+        sfx_tick();
+        CHECK(last_pan_ch >= CH_SFX && (side < 0 ? last_pan < -20 : last_pan > 20),
+              "side %d pan %d", side, last_pan);
+    }
+    sfxv[0].pos = sfxv[1].pos = 0xffff;
+    sfx_at(SFX_HIT, pl.x + ONE, pl.y);
+    sfx_tick();
+    int near_vol = last_pan_vol;
+    CHECK(IABS(last_pan) < 8, "ahead pan %d", last_pan);
+    sfxv[0].pos = sfxv[1].pos = 0xffff;
+    sfx_at(SFX_HIT, pl.x + 12 * ONE, pl.y);
+    sfx_tick();
+    CHECK(last_pan_vol < near_vol, "far effect not quieter (%d vs %d)", last_pan_vol, near_vol);
+    sfxv[0].pos = sfxv[1].pos = 0xffff;
+    sfx(SFX_PICKUP);
+    sfx_tick();
+    CHECK(last_pan == 0, "Fed's own effect is panned %d", last_pan);
 }
 
 static void test_no_damage_through_walls(void) {
@@ -804,6 +880,8 @@ int main(int argc, char **argv) {
     }
     int soak = argc > 1 ? atoi(argv[1]) : 3000;
     test_walls();
+    test_controls();
+    test_sfx_pan();
     test_no_damage_through_walls();
     test_poison();
     test_cat_targeting();

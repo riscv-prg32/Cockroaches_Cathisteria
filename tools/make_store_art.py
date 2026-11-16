@@ -6,8 +6,8 @@
 
 The screenshot comes from `tests/run_tests.sh shots` (the host framebuffer
 is pixel-identical to the cartridge's strips), so run that first. Both
-images are stored with small palettes because the store trailer counts
-towards the 64 KiB cartridge limit.
+images are stored with palettes because the store trailer counts towards
+the 128 KiB cartridge package limit.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ def main() -> int:
     if not shot.exists():
         raise SystemExit(f"{shot} is missing: run tests/run_tests.sh shots first")
     frame = Image.open(shot).convert("RGB").crop((0, 20, 320, 220))
-    frame.quantize(colors=48, dither=Image.Dither.NONE).save(out / "screenshot.png", optimize=True)
+    frame.quantize(colors=128, dither=Image.Dither.NONE).save(out / "screenshot.png", optimize=True)
     for name in ("icon.png", "screenshot.png"):
         print(f"assets/{name}: {(out / name).stat().st_size} bytes")
     return 0
