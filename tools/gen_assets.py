@@ -258,12 +258,13 @@ cat_palette("cat_black", C(0, 0, 0), C(1, 1, 1), C(2, 2, 2), C(0, 0, 0), eye=C(5
 cat_palette("cat_gray", C(2, 2, 2), C(3, 3, 3), C(4, 4, 4), C(2, 2, 2), eye=C(1, 4, 5))
 cat_palette("cat_calico", C(1, 1, 1), C(5, 5, 5), C(5, 4, 3), C(5, 2, 0))
 cat_palette("cat_siamese", C(2, 1, 0), C(5, 4, 3), C(5, 5, 4), C(3, 2, 1), eye=C(0, 2, 5))
-# Fed (Federica): dark-brown wavy hair, thin light glasses, magenta dress.
+# Fed (Federica): long, very dark brown hair, green eyes, slim plum glasses
+# with a magenta top rim, rosy lips, magenta dress.
 # slots: 1 outline 2 hair dark 3 hair 4 hair light 5 skin 6 skin shade
-#        7 glasses 8 lips 9 gold 10 blush 11 white 12 eye white 13 mouth
-#        14 dress 15 dress shade
-palette("fed", 0, C(1, 0, 0), C(1, 0, 0), C(2, 1, 0), C(3, 2, 1), C(5, 4, 3), C(4, 3, 2),
-        C(4, 4, 5), C(4, 1, 2), C(5, 4, 0), C(5, 3, 3), C(5, 5, 5), C(5, 5, 4), C(2, 0, 0),
+#        7 glasses 8 lips 9 iris 10 blush 11 white 12 eye white 13 mouth
+#        14 dress (and the glasses' top rim) 15 dress shade
+palette("fed", 0, C(0, 0, 0), C(0, 0, 0), C(1, 0, 0), C(2, 1, 0), C(5, 4, 3), C(4, 3, 2),
+        C(2, 1, 2), C(4, 2, 2), C(1, 3, 1), C(5, 3, 3), C(5, 5, 5), C(5, 5, 4), C(2, 0, 0),
         C(5, 0, 4), C(3, 0, 3))
 # Ralph: hair 2-3, skin 4-5, glasses 6, polo 7-8, trousers 9-10, shoes 11,
 # eyes 12, stubble 13, watch 14. After the reference photo: short dark hair,
@@ -1224,106 +1225,123 @@ def cat_dazed() -> Canvas:
 
 def fed(expr: str) -> Canvas:
     """Fed, after Federica, as a 48x48 portrait shown 1:1 in the status bar:
-    shoulder-length dark wavy hair with a side part, warm brown eyes behind
-    thin round light-framed glasses, a warm smile, gold earrings and a
-    magenta dress."""
+    long, very dark brown hair parted near the middle and blown by the wind,
+    an open freckled forehead, green eyes behind slim rectangular glasses
+    (dark plum frame, magenta along the top), a small nose stud, a warm
+    smile with rosy lips, and a magenta dress."""
     c = Canvas(48, 48)
-    # hair: a full wavy mass falling to the shoulders
-    c.ellipse(24, 21, 19, 18, 2)
-    for side in (-1, 1):
-        for k, y in enumerate((20, 25, 30, 35, 39)):
-            c.ellipse(24 + side * (17.5 - (k & 1) * 1.5), y, 4.6, 3.6, 3 if k & 1 else 2)
+    # hair behind the head: long and straight, falling past the shoulders
+    c.ellipse(24, 19.5, 15, 14.5, 3)
+    c.poly([(10, 15), (14, 26), (15, 38), (13.5, 47), (6, 47), (7.5, 36), (8, 24)], 3)
+    c.poly([(38, 15), (34, 26), (33, 38), (34.5, 47), (42, 47), (40.5, 36), (40, 24)], 3)
+    c.poly([(11, 22), (14, 30), (14, 44), (10, 44), (10, 33)], 2)             # shadowed depths
+    c.poly([(37, 22), (34, 30), (34, 44), (38, 44), (38, 33)], 2)
     # neck and shoulders, dress
-    c.poly([(5, 48), (8, 42), (17, 39), (31, 39), (40, 42), (43, 48)], 5)
-    c.rect(19, 33, 28, 41, 5)
-    c.poly([(19, 36), (28, 36), (27, 40), (20, 40)], 6)          # shadow under the chin
-    c.poly([(9, 48), (11, 43), (18, 43), (24, 46), (30, 43), (37, 43), (39, 48)], 14)
-    c.line(11, 43, 13, 39, 14)                                    # straps
-    c.line(37, 43, 35, 39, 14)
-    c.line(18, 44, 24, 47, 15)
-    c.line(30, 44, 24, 47, 15)
-    # face: an oval with a softer jaw, shaded on its right side
-    c.ellipse(24, 23, 10.8, 12.5, 5)
-    c.ellipse(24, 28, 9.2, 8.6, 5)
-    for y in range(14, 37):
+    c.poly([(4, 48), (8, 42.5), (17, 39.5), (31, 39.5), (40, 42.5), (44, 48)], 5)
+    c.rect(20, 31, 28, 41, 5)
+    c.poly([(20, 33), (28, 33), (27.5, 38), (20.5, 37)], 6)                 # shadow under the chin
+    c.poly([(9, 48), (11, 43.5), (18, 43.5), (24, 46.5), (30, 43.5), (37, 43.5), (39, 48)], 14)
+    c.line(18, 44.5, 24, 47.5, 15)
+    c.line(30, 44.5, 24, 47.5, 15)
+    # locks in front of the shoulders
+    c.poly([(13, 24), (16.5, 33), (17, 40), (15, 47), (10, 47), (12, 40), (11.5, 32)], 3)
+    c.poly([(35, 24), (31.5, 33), (31, 40), (33, 47), (38, 47), (36, 40), (36.5, 32)], 3)
+    # face: an oval with soft full cheeks and a rounded chin, shaded on its right
+    c.ellipse(24, 21.5, 9.8, 11, 5)
+    c.poly([(14.4, 23), (33.6, 23), (31.5, 30), (27.5, 34.8), (20.5, 34.8), (16.5, 30)], 5)
+    for y in range(10, 36):
         for x in range(24, 36):
             if c.get(x, y) == 5 and c.get(x + 2, y) != 5:
                 c.set(x, y, 6)
-    # side-parted bangs sweeping right, with light strands
-    c.poly([(12.5, 25), (13, 15), (18, 9), (27, 7.5), (35, 11), (36.5, 19), (33, 14.5),
-            (27, 13), (21, 13.5), (16, 17), (14.5, 25)], 3)
-    c.poly([(30, 12), (35.5, 13), (36.5, 24), (34, 17)], 2)
-    for pts in (((16, 15), (22, 10)), ((21, 11), (28, 9)), ((28, 10), (33, 12)), ((8, 22), (9, 30)),
-                ((40, 22), (39, 31)), ((10, 33), (12, 37)), ((37, 34), (36, 38))):
-        (x0, y0), (x1, y1) = pts
+    # parted just left of the middle; the hair frames the open forehead
+    c.poly([(23, 6.5), (17.5, 8), (13.5, 12.5), (12.5, 20), (13, 28), (15, 22), (15.5, 16),
+            (18, 11.5), (22.5, 9)], 3)
+    c.poly([(23, 6.5), (29, 7), (34, 10.5), (35.5, 18), (35, 28), (33, 21), (32.5, 15),
+            (29.5, 10.5), (24, 9)], 3)
+    c.line(23, 7, 23.5, 9, 2)                                     # the parting
+    # sun-lit strands
+    for (x0, y0), (x1, y1) in (((20.5, 8.5), (17, 10.5)), ((26.5, 8.5), (31, 10.5)),
+                               ((12.5, 32), (12.5, 38)), ((35.5, 32), (35.5, 38))):
         c.line(x0, y0, x1, y1, 4)
-    c.set(23, 8, 4)
-    c.set(24, 8, 4)
-    # brows
+    # a few strands blown out to the side by the wind
+    for k in range(9):
+        c.set(9 - k, 14 - 1.4 * math.sin(k * 0.8), 3)
+        c.set(9 - k * 0.8, 18 + k * 0.3 - math.sin(k * 0.9), 3)
+    # brows: soft arches
     if expr == "fierce":
-        c.line(15, 16.5, 21, 18.5, 1)
-        c.line(33, 16.5, 27, 18.5, 1)
+        c.line(16, 16.5, 21, 18.5, 2)
+        c.line(32, 16.5, 27, 18.5, 2)
     elif expr == "ouch":
-        c.line(15, 18, 21, 16.5, 1)
-        c.line(33, 18, 27, 16.5, 1)
+        c.line(16, 18, 21, 16.5, 2)
+        c.line(32, 18, 27, 16.5, 2)
     else:
-        c.line(15, 17, 18, 16, 2)
-        c.line(18, 16, 21, 16.5, 2)
-        c.line(27, 16.5, 30, 16, 2)
-        c.line(30, 16, 33, 17, 2)
-    # eyes
-    for cx in (18.5, 29.5):
+        c.line(16, 16.5, 18, 15.5, 2)
+        c.line(18, 15.5, 21, 16, 2)
+        c.line(27, 16, 30, 15.5, 2)
+        c.line(30, 15.5, 32, 16.5, 2)
+    # freckles across the forehead, nose and cheeks
+    for x, y in ((21, 12.5), (27, 12), (21, 25.5), (27, 25.5), (18.5, 26), (30, 26)):
+        c.set(x, y, 6)
+    # green eyes
+    for cx in (18.8, 29.2):
         if expr == "ouch":                                        # squeezed shut
-            c.line(cx - 2.5, 21, cx + 2.5, 22, 1)
-            c.line(cx - 2.5, 23, cx + 2.5, 22, 1)
+            c.line(cx - 2.5, 20.5, cx + 2.5, 21.5, 1)
+            c.line(cx - 2.5, 22.5, cx + 2.5, 21.5, 1)
             continue
-        c.ellipse(cx, 21.6, 2.9, 1.6, 12)
-        c.ellipse(cx + 0.3, 21.6, 1.5, 1.6, 2)
-        c.set(cx + 0.3, 21.8, 1)
-        c.set(cx - 0.4, 21, 11)                                   # glint
-        c.line(cx - 3, 20, cx + 3, 20, 1)                         # upper lid and lashes
-        c.set(cx + 3.4, 19.5, 1)
-    # thin round glasses
-    for cx in (18.5, 29.5):
-        for a in range(0, 360, 8):
-            c.set(cx + 5.0 * math.cos(math.radians(a)), 21.8 + 4.3 * math.sin(math.radians(a)), 7)
-    c.line(22.6, 20.6, 25.4, 20.6, 7)
-    c.line(13.5, 21, 11.5, 21, 7)
-    c.line(34.5, 21, 36.5, 21, 7)
-    c.set(15.5, 19.5, 11)                                         # lens glint
-    c.set(26.5, 19.5, 11)
-    # nose
-    c.line(25, 23, 25.5, 27, 6)
+        c.ellipse(cx, 21, 2.6, 1.2, 12)
+        c.ellipse(cx, 21, 1.2, 1.3, 9)
+        c.set(cx, 21, 1)
+        c.set(cx - 0.6, 20.4, 11)                                 # glint
+        c.line(cx - 2.7, 19.6, cx + 2.5, 19.6, 1)                 # upper lid and lashes
+        c.set(cx + 3.1, 19.4, 1)
+    # slim rectangular glasses: dark plum frame, magenta along the top
+    for x0, x1 in ((13, 23), (25, 35)):
+        y0, y1 = 18, 23
+        c.line(x0 + 1, y0, x1 - 1, y0, 15)
+        c.line(x0, y0 + 1, x0, y1 - 1, 7)
+        c.line(x1, y0 + 1, x1, y1 - 1, 7)
+        c.line(x0 + 1, y1, x1 - 1, y1, 7)
+        c.set(x0, y0, 7)
+        c.set(x1, y0, 7)
+        c.set(x1 - 2, y0 + 1, 11)                                 # lens glint
+    c.line(23, 19.5, 25, 19.5, 7)                                 # bridge
+    c.set(12, 19, 7)                                              # temples
+    c.set(36, 19, 7)
+    # nose and the little stud on its left side
+    c.line(24.6, 23.5, 25, 27, 6)
     c.set(23, 28, 6)
-    c.set(25, 28, 6)
-    # blush and earrings
-    c.ellipse(16.5, 28, 2, 1.1, 10)
-    c.ellipse(32, 28, 2, 1.1, 10)
-    for x in (13, 35):
-        c.set(x, 29, 9)
-        c.set(x, 31, 9)
-        c.set(x - 0.6, 30, 9)
-        c.set(x + 0.6, 30, 9)
-    # mouth
-    if expr == "ok":                                              # a big warm smile
-        c.poly([(19, 30.5), (29, 30.5), (27.5, 33.5), (24, 34.5), (20.5, 33.5)], 13)
-        c.rect(20, 31, 28, 31, 11)
-        c.line(18.5, 30.2, 29.5, 30.2, 8)
-        c.line(21, 34, 27, 34, 8)
-        c.set(18, 29.5, 6)
-        c.set(30, 29.5, 6)
+    c.set(25.6, 28, 6)
+    c.set(22.4, 27.4, 12)
+    # blush
+    c.ellipse(17.5, 27.5, 1.8, 0.9, 10)
+    c.ellipse(31, 27.5, 1.8, 0.9, 10)
+    # mouth: rosy lips
+    if expr == "ok":                                              # a warm smile, upper teeth showing
+        c.line(20, 30, 28, 30, 8)
+        c.set(19.3, 29.3, 8)
+        c.set(28.7, 29.3, 8)
+        c.line(20.8, 31, 27.2, 31, 11)                            # teeth
+        c.line(21, 32, 27, 32, 8)                                 # lower lip
+        c.line(22.5, 32.9, 25.5, 32.9, 8)
+        c.line(23, 32, 25, 32, 10)                                # its highlight
+        c.set(18.6, 28.6, 6)                                      # dimples
+        c.set(29.4, 28.6, 6)
     elif expr == "ouch":
-        c.ellipse(24, 32, 2.2, 2.4, 13)
-        c.line(22, 29.6, 26, 29.6, 8)
-        c.set(37, 15, 12)                                         # a bead of sweat
-        c.set(37, 16, 12)
-        c.set(36.5, 17, 11)
+        c.ellipse(24, 31, 1.8, 1.9, 13)
+        c.line(22.5, 29, 25.5, 29, 8)
+        c.line(22.5, 33, 25.5, 33, 8)
+        for x, y in ((21.8, 30), (26.2, 30), (21.8, 32), (26.2, 32)):
+            c.set(x, y, 8)
+        c.set(37, 14, 12)                                         # a bead of sweat
+        c.set(37, 15, 12)
+        c.set(36.5, 16, 11)
     else:                                                         # gritted teeth
-        c.rect(19, 30, 29, 33, 13)
-        c.rect(20, 31, 28, 32, 11)
-        c.line(24, 31, 24, 32, 12)
-        c.line(19, 29.5, 29, 29.5, 8)
-        c.line(19, 33.5, 29, 33.5, 8)
+        c.rect(20, 30, 28, 31, 11)
+        c.line(24, 30, 24, 31, 12)
+        c.line(19.5, 29, 28.5, 29, 8)
+        c.line(19.5, 32, 28.5, 32, 8)
+        c.line(21, 32.8, 27, 32.8, 8)
+        c.line(23, 32, 25, 32, 10)
     c.outline(1)
     return c
 
