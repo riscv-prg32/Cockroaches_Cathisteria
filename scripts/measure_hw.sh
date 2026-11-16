@@ -10,6 +10,10 @@
 # for the run, then reads the PRG32 performance broker result and prints
 # frames per second per level. The JSON is kept in build/measure/.
 #
+# pcb1 boards wire joystick DOWN to GPIO13 (native USB D+), so USB uploads
+# and the device protocol do not work there: join the board to Wi-Fi in its
+# setup menu and pass --url with the address it shows.
+#
 # Environment: PRG32_REPO (default ../PRG32); PRG32_PYTHON, a Python with
 # pyserial for USB (default: the ESP-IDF Python environment, else python3).
 set -euo pipefail
