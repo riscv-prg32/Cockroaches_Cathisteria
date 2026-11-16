@@ -1,7 +1,7 @@
 /*
  * Cockroaches Cathisteria -- a Doom-style PRG32 cartridge.
  *
- * Fed lives in a three-story house on South Harper Street, Hyde Park,
+ * Fed lives in a three-story house on South Harper Avenue, Hyde Park,
  * Chicago, with her feline armada. When an interdimensional portal opens in
  * her basement, she fights her way from the front yard, up the chimney,
  * across the roof and down through the whole house to seal it -- with cats

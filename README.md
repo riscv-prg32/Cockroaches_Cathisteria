@@ -1,6 +1,6 @@
 # Cockroaches Cathisteria
 
-Fed is a cat-crazy woman living in a three-story house on South Harper Street, Hyde Park, Chicago, with her feline armada. When an interdimensional portal opens in her basement, unleashing giant alien cockroaches, Fed becomes humanity’s first and last line of defense, with her cats as weapons.
+Fed is a cat-crazy woman living in a three-story house on South Harper Avenue, Hyde Park, Chicago, with her feline armada. When an interdimensional portal opens in her basement, unleashing giant alien cockroaches, Fed becomes humanity’s first and last line of defense, with her cats as weapons.
 
 <p align="center"><img src="assets/screenshot.png" alt="Fed's cats against the Couch Colossus" width="480"></p>
 
