@@ -264,9 +264,19 @@ static void vis_add(int32_t wx, int32_t wy, int z, int ww, int wh, int spr, int 
     int32_t depth = (rx * cam_dx + ry * cam_dy) >> 12;
     if (depth < 40) return;
     int32_t lat = (ry * cam_dx - rx * cam_dy) >> 12;
-    int32_t sx = SW / 2 + lat * FOCAL / depth;
-    int32_t w = ww * FOCAL / depth, h = wh * WALL_S / depth;
-    int32_t bottom = HORIZON + ((ONE / 2 - z) * WALL_S) / depth;
+    /* Point blank: project from NEAR_DEPTH at most, so a biting roach looks
+     * right in front of Fed instead of filling the view with a few giant
+     * texels, and cap the height (bosses). The z-buffer test keeps the true
+     * depth. */
+    int32_t pd = IMAX(depth, NEAR_DEPTH);
+    if (depth < NEAR_DEPTH) lat = lat * NEAR_DEPTH / depth;
+    int32_t sx = SW / 2 + lat * FOCAL / pd;
+    int32_t w = ww * FOCAL / pd, h = wh * WALL_S / pd;
+    int32_t bottom = HORIZON + ((ONE / 2 - z) * WALL_S) / pd;
+    if (h > MAX_SPRITE_H) {
+        w = w * MAX_SPRITE_H / h;
+        h = MAX_SPRITE_H;
+    }
     if (w < 1 || h < 1 || w > 1200 || h > 1200) return;
     if (sx + w / 2 < 0 || sx - w / 2 >= SW || bottom - h >= VIEW_H || bottom < 0) return;
     vis_t *v = &vis[nvis++];

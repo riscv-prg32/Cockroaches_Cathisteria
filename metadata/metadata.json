@@ -2,7 +2,7 @@
   "abi": "prg32-metadata-1.0",
   "id": "prg32.cockroaches",
   "title": "Cockroaches Cathisteria",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "summary": "A Doom-style invasion defense: Fed saves humanity from alien cockroaches with an army of cats.",
   "description": "Fed lives in a three-story house on South Harper Street, Hyde Park, Chicago, with her formidable feline armada. When an interdimensional portal opens in her basement, giant alien cockroaches and beetles pour out, and Fed fights her way from the front yard through the kitchen, up the chimney, across the roof and down through every floor of the house to seal the portal. Her cats are her weapons: press A to send a cat at the enemy in the crosshair, hold B to raise the feline shield, and hold B with LEFT or RIGHT to sidestep behind it. Play needs only the joystick, A and B. Twelve levels, twelve bosses plus the invasion leaders, a raycast 3D view with 32x32 textured walls, floors and ceilings, procedural pixel art, and an original, adaptive Chicago blues soundtrack played by a SID-like synth band with stereo effects that follow the action. Built for the PRG32 128 KiB cartridge profile.",
   "authors": [

@@ -556,9 +556,9 @@ void cockroaches_init(void) {
     game_set_state(ST_TITLE);
 }
 
-void cockroaches_update(void) {
+static void game_update(uint32_t in_override, int use_override) {
     uint32_t now = prg32_ticks_ms();
-    uint32_t in = prg32_input_read();
+    uint32_t in = use_override ? in_override : prg32_input_read();
     acc_ms += now - last_ms;
     last_ms = now;
     if (acc_ms > 200) acc_ms = 200; /* after a long stall, do not fast-forward */
@@ -571,10 +571,10 @@ void cockroaches_update(void) {
     }
 }
 
-void cockroaches_draw(void) {
+static void game_draw(int bands) {
     sp_reset();
     if (world_state(state)) {
-        bands_update();
+        if (bands) bands_update();
         if (hud_needs_redraw()) {
             ops_clear();
             hud_ops();
@@ -588,4 +588,137 @@ void cockroaches_draw(void) {
         bands_update();
         draw_screen();
     }
+}
+
+/* ---- frame-time measurement (CC_MEASURE builds only) ------------------
+ *
+ * A wrapper with CC_MEASURE 1 (and CC_TEST_GOD 1) turns the cartridge into a
+ * hardware benchmark: it plays each of the twelve levels for MEASURE_FRAMES
+ * real frames, turning and sending cats, and records every frame through
+ * PRG32's performance broker (one case per level). Read the result over USB
+ * with `python3 -m prg32 esp32c6 performance`; scripts/measure_hw.sh does it
+ * all. The summary is also shown in the status bands. */
+#if CC_MEASURE
+#include "prg32_metrics.h"
+#define MEASURE_FRAMES 240
+static int meas_level = -1, meas_frame, meas_done;
+static uint32_t meas_update_us, meas_sum_us, meas_worst_fps10 = 9999, meas_worst_level;
+static uint64_t meas_prev;
+static char meas_name[4];
+static uint32_t meas_fps10[LEVEL_COUNT];
+
+static void measure_next_level(void) {
+    if (meas_level >= 0) prg32_perf_case_end();
+    if (++meas_level >= LEVEL_COUNT) {
+        prg32_perf_end();
+        meas_done = 1;
+        return;
+    }
+    level_enter(meas_level);
+    game_set_state(ST_LEVEL_START);
+    game_set_state(ST_PLAYING);
+    meas_name[0] = 'L';
+    meas_name[1] = (char)('0' + (meas_level + 1) / 10);
+    meas_name[2] = (char)('0' + (meas_level + 1) % 10);
+    meas_name[3] = 0;
+    prg32_perf_case_desc_t d;
+    d.abi_version = PRG32_PERF_ABI_VERSION;
+    d.struct_size = sizeof(d);
+    d.case_index = (uint32_t)meas_level;
+    d.color_mode = PRG32_PERF_COLOR_CUSTOM;
+    d.name = meas_name;
+    d.metric_goal = "full frame: 3D view, HUD, music";
+    if (prg32_perf_case_begin(&d, MEASURE_FRAMES) != 0) {
+        prg32_perf_abort();
+        meas_done = 2;
+    }
+    meas_frame = 0;
+    meas_sum_us = 0;
+    meas_prev = 0;
+}
+#endif
+
+void cockroaches_update(void) {
+#if CC_MEASURE
+    if (meas_level < 0 && !meas_done) {
+        prg32_perf_suite_desc_t su;
+        su.abi_version = PRG32_PERF_ABI_VERSION;
+        su.struct_size = sizeof(su);
+        su.suite_version = 2;
+        su.name = "cockroaches-2.0";
+        if (prg32_perf_begin(&su) != 0) meas_done = 2;
+        else measure_next_level();
+    }
+    if (!meas_done) {
+        /* turn steadily, walk now and then, send cats */
+        uint32_t in = PRG32_BTN_RIGHT;
+        if ((meas_frame & 63) < 20) in |= PRG32_BTN_UP;
+        if ((meas_frame & 15) < 3) in |= PRG32_BTN_A;
+        uint64_t t0 = prg32_perf_now_us();
+        game_update(in, 1);
+        meas_update_us = (uint32_t)(prg32_perf_now_us() - t0);
+        return;
+    }
+    game_update(0, 1);
+#else
+    game_update(0, 0);
+#endif
+}
+
+void cockroaches_draw(void) {
+#if CC_MEASURE
+    if (meas_done) {
+        if (meas_done == 1) {
+            uint32_t sum = 0;
+            for (int l = 0; l < LEVEL_COUNT; ++l) sum += meas_fps10[l];
+            sp_begin();
+            sp_str("MEASURED: AVG ");
+            sp_int((int)(sum / LEVEL_COUNT / 10));
+            sp_char('.');
+            sp_int((int)(sum / LEVEL_COUNT % 10));
+            sp_str(" FPS, WORST L");
+            sp_int((int)meas_worst_level + 1);
+            sp_char(' ');
+            sp_int((int)(meas_worst_fps10 / 10));
+            sp_char('.');
+            sp_int((int)(meas_worst_fps10 % 10));
+            band_text(PRG32_BAND_BOTTOM, sp_end());
+            band_text(PRG32_BAND_TOP, "COCKROACHES 2.0 FRAME-TIME RUN COMPLETE");
+        } else {
+            band_text(PRG32_BAND_BOTTOM, "PERFORMANCE BROKER ERROR");
+        }
+        game_draw(0);
+        return;
+    }
+    uint64_t t0 = prg32_perf_now_us();
+    game_draw(1);
+    uint32_t draw_us = (uint32_t)(prg32_perf_now_us() - t0);
+    if (meas_prev) {
+        uint32_t total = (uint32_t)(t0 - meas_prev);
+        prg32_perf_sample_t smp;
+        smp.abi_version = PRG32_PERF_ABI_VERSION;
+        smp.struct_size = sizeof(smp);
+        smp.frame_index = (uint32_t)meas_frame;
+        smp.update_us = meas_update_us;
+        smp.draw_us = draw_us;
+        smp.present_us = total > meas_update_us + draw_us ? total - meas_update_us - draw_us : 0;
+        smp.frame_total_us = total;
+        smp.input_mask = 0;
+        if (prg32_perf_record(&smp) != 0) {
+            prg32_perf_abort();
+            meas_done = 2;
+            return;
+        }
+        meas_sum_us += total;
+        if (++meas_frame >= MEASURE_FRAMES) {
+            uint32_t fps10 = 10000000u / IMAX(1, (int)(meas_sum_us / MEASURE_FRAMES));
+            meas_fps10[meas_level] = fps10;
+            if (fps10 < meas_worst_fps10) meas_worst_fps10 = fps10, meas_worst_level = (uint32_t)meas_level;
+            measure_next_level();
+        }
+    }
+    meas_prev = t0;
+#else
+    game_draw(1);
+#endif
 }

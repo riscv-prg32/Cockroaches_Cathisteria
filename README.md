@@ -80,6 +80,7 @@ python3 tools/gen_levels.py      # levels/*.txt + pages/pages.txt -> src/level_d
 python3 tools/gen_assets.py      # procedural art and synth instruments -> src/assets.h, audio/cc_audio.json
 tests/run_tests.sh shots         # build/shots/*.png, one per screen and level
 tests/run_tests.sh cost          # estimated ESP32-C6 frame cost per level
+scripts/measure_hw.sh --slot cart3   # measured frame rate per level on a board (overwrites cart3)
 python3 tools/make_store_art.py  # assets/icon.png and assets/screenshot.png
 python3 scripts/qemu_preview.py --script play --out build/preview   # real firmware in QEMU
 python3 scripts/qemu_preview.py --script preview --video --seconds 75 --out build/qemu-preview  # MP4
@@ -103,7 +104,7 @@ docs/       design and technical notes
 
 ## Technical profile
 
-- Portable PRG32 ABI-table cartridge for the 128 KiB profile: 64.6 KB code and data plus 11.5 KB bss = 76.0 KB of the 128 KiB cartridge RAM. The store image is 74.7 KB of the 128 KiB package limit.
+- Portable PRG32 ABI-table cartridge for the 128 KiB profile: 64.7 KB code and data plus 11.5 KB bss = 76.1 KB of the 128 KiB cartridge RAM. The store image is 74.7 KB of the 128 KiB package limit.
 - Integer DDA raycaster (160 rays) with floor/ceiling casting, distance fog and a Chicago skyline for outdoor levels.
 - 32x32-texel wall, floor and ceiling textures (2 or 4 bpp), enlarged from 16x16 designs with Scale2x and then given bevels, grain and finer noise.
 - Frames are composed in 8-row strips of 8-bit colour indices (17 blits for the 3D view) and blitted with `prg32_sprite_draw_indexed`, using a 216-colour palette that maps exactly onto the ESP32-C6 system colour cube.

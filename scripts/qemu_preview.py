@@ -130,6 +130,14 @@ SCRIPTS = {
         (0.2, "loop", (11, 8)),
         (0.0, "wait", 600.0),
     ],
+    # The frame-time benchmark (a CC_MEASURE build): it runs by itself; take
+    # a few shots along the way and one of the summary in the bands.
+    "measure": [
+        (20.0, "shot", "measure_l1"),
+        (60.0, "shot", "measure_mid"),
+        (0.0, "wait", 300.0),
+        (0.0, "shot", "measure_done"),
+    ],
     # The second preview segment, recorded from a build that starts on the
     # portal level (CC_START_LEVEL 11, CC_TEST_GOD 1; see docs/design.md).
     "portal": [

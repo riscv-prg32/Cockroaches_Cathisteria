@@ -246,6 +246,33 @@ static void test_sfx_pan(void) {
     CHECK(last_pan == 0, "Fed's own effect is panned %d", last_pan);
 }
 
+/* A roach biting Fed at point blank stays a readable size, in its true
+ * direction, instead of filling the view with giant texels. */
+static void test_point_blank(void) {
+    printf("enemies at point blank stay a readable size\n");
+    for (int k = 0; k < 3; ++k) {
+        empty_room();
+        int lat = (k - 1) * 60; /* left, centre, right of the crosshair */
+        int i = enemy_spawn(k == 1 ? E_BEETLE : E_ROACH, pl.x + 120, pl.y + lat, 0);
+        CHECK(i >= 0, "spawn");
+        camera_from_player();
+        cast_rays();
+        world_vis();
+        int found = 0;
+        for (int v = 0; v < nvis; ++v) {
+            CHECK(vis[v].h <= MAX_SPRITE_H, "billboard %d px tall", vis[v].h);
+            CHECK(vis[v].w <= 2 * MAX_SPRITE_H, "billboard %d px wide", vis[v].w);
+            if (vis[v].depth < NEAR_DEPTH) {
+                found = 1;
+                int cx = vis[v].x0 + vis[v].w / 2;
+                CHECK(k == 1 ? IABS(cx - SW / 2) < 8 : (k == 0 ? cx < SW / 2 - 40 : cx > SW / 2 + 40),
+                      "point-blank roach %d drawn at x %d", k, cx);
+            }
+        }
+        CHECK(found, "point-blank enemy %d not drawn", k);
+    }
+}
+
 static void test_no_damage_through_walls(void) {
     printf("enemies cannot damage Fed through walls\n");
     empty_room();
@@ -882,6 +909,7 @@ int main(int argc, char **argv) {
     test_walls();
     test_controls();
     test_sfx_pan();
+    test_point_blank();
     test_no_damage_through_walls();
     test_poison();
     test_cat_targeting();

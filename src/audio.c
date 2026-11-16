@@ -267,16 +267,20 @@ static void music_play(int song) {
     }
 }
 
+/* The band sits about 3 dB above its raw pattern volumes (measured against
+ * other Store cartridges on the same firmware: docs/design.md, section 8). */
+static uint8_t mvol(int v) { return (uint8_t)IMIN(255, v * 7 / 5); }
+
 static void drum_hit(int d, int soft) {
     switch (d) {
-    case 1: prg32_audio_note_on(CH_KICK, INS_KICK, 33, soft ? 140 : 230); break;
+    case 1: prg32_audio_note_on(CH_KICK, INS_KICK, 33, mvol(soft ? 140 : 230)); break;
     case 5:
-        prg32_audio_note_on(CH_KICK, INS_KICK, 33, soft ? 140 : 230);
-        prg32_audio_note_on_pan(CH_SNARE, INS_HAT, 124, soft ? 30 : 55, 20);
+        prg32_audio_note_on(CH_KICK, INS_KICK, 33, mvol(soft ? 140 : 230));
+        prg32_audio_note_on_pan(CH_SNARE, INS_HAT, 124, mvol(soft ? 30 : 55), 20);
         break;
-    case 2: prg32_audio_note_on_pan(CH_SNARE, INS_HAT, 124, soft ? 35 : 60, 20); break;
-    case 3: prg32_audio_note_on_pan(CH_SNARE, INS_SNARE, 100, soft ? 70 : 150, -8); break;
-    case 4: prg32_audio_note_on_pan(CH_SNARE, INS_SNARE, 104, soft ? 30 : 50, -8); break;
+    case 2: prg32_audio_note_on_pan(CH_SNARE, INS_HAT, 124, mvol(soft ? 35 : 60), 20); break;
+    case 3: prg32_audio_note_on_pan(CH_SNARE, INS_SNARE, 100, mvol(soft ? 70 : 150), -8); break;
+    case 4: prg32_audio_note_on_pan(CH_SNARE, INS_SNARE, 104, mvol(soft ? 30 : 50), -8); break;
     default: break;
     }
     if (d >= 2 && d <= 5) mus_snare_left = 3;
@@ -302,13 +306,13 @@ static void music_tick(void) {
     int soft = (m->flags & MF_SOFT) != 0;
 
     /* the echo of the previous lead note, one swung step later */
-    if (echo_note && !ambient_on) prg32_audio_note_on_pan(CH_AMBIENT, INS_ECHO, (uint8_t)echo_note, 50, 40);
+    if (echo_note && !ambient_on) prg32_audio_note_on_pan(CH_AMBIENT, INS_ECHO, (uint8_t)echo_note, mvol(50), 40);
     echo_note = 0;
 
     if (layers >= 2) {
         n = bass_pats[m->bass][s];
         if (n > N_HOLD)
-            prg32_audio_note_on(0, INS_BASS, (uint8_t)(45 + root + n), mus_song == MUS_BOSS ? 220 : 180);
+            prg32_audio_note_on(0, INS_BASS, (uint8_t)(45 + root + n), mvol(mus_song == MUS_BOSS ? 220 : 180));
         else if (n == N_REST && s == 0)
             prg32_audio_note_off(0);
     }
@@ -324,7 +328,7 @@ static void music_tick(void) {
     }
     drum_hit(d, soft);
     if (m->comp && layers >= 3) {
-        if (s == 1 || s == 5) prg32_audio_note_on_pan(CH_ORGAN, INS_ORGAN, (uint8_t)(57 + root + (s == 1 ? 4 : 10)), 70, -24);
+        if (s == 1 || s == 5) prg32_audio_note_on_pan(CH_ORGAN, INS_ORGAN, (uint8_t)(57 + root + (s == 1 ? 4 : 10)), mvol(70), -24);
         else if (s == 2 || s == 6) prg32_audio_note_off(CH_ORGAN);
     }
     int call = (mus_bar & 1) == 0;
@@ -337,7 +341,7 @@ static void music_tick(void) {
             n += 69 + root;
             if (mus_warp && (int)(rnd() & 7) < mus_warp) n += (rnd() & 1) ? 1 : 6;
             int ins = call ? m->ins : INS_HARP;
-            prg32_audio_note_on_pan(CH_LEAD, (uint8_t)ins, (uint8_t)n, 110, 8);
+            prg32_audio_note_on_pan(CH_LEAD, (uint8_t)ins, (uint8_t)n, mvol(110), 8);
             echo_note = n;
         }
     } else if (s == 0) {

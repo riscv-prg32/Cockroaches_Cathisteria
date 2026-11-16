@@ -66,6 +66,7 @@ Each frame in a world state does the following:
 
 1. **Cast** 160 rays (one per 2-pixel column) through the map with an integer DDA. Positions are Q8 (256 = one tile) and directions Q12. For each ray it stores the perpendicular distance (the z-buffer), the wall's top and bottom, the texel column (32 per tile), the palette, a shade, and the skyline height for that heading.
 2. **Project** every enemy, cat, projectile, pickup, puddle and prop into camera space (depth and lateral offset against the view direction), scale it by `FOCAL` horizontally and `WALL_S` vertically, and sort far to near. At most 40 billboards are drawn.
+   A billboard closer than `NEAR_DEPTH` (1.2 tiles) is projected as if it stood at that distance, with its lateral offset scaled by the same factor so it stays on its side of the view, and no billboard is taller than `MAX_SPRITE_H` (168 px, about the height of the view). An enemy biting Fed therefore fills most of the view but stays a readable sprite, instead of a few texels blown up into screen-sized blocks as in version 1. The z-buffer test still uses the true depth (`test_point_blank`).
 3. **Compose** the view in 8-row strips. For every row the floor or ceiling is floor-cast: the row distance is precomputed, and the world position steps linearly across the 160 columns. Wall texels come from the per-ray data. Sky rows use a gradient, stars and a building silhouette. Sprites are then drawn column by column, hidden behind nearer walls, followed by the 2D overlays (text, rectangles, dimming, scaled sprites) from a small retained op list.
 4. **Blit** each finished strip with `prg32_sprite_draw_indexed()` as an 8-bit indexed sprite.
 
@@ -83,7 +84,7 @@ A 320x200 buffer would take 64,000 of the 131,072 bytes of cartridge RAM. An 8-r
 
 ## 4. Memory budget (measured)
 
-`scripts/build.sh` reports `code=64564 mem=76040 audio=168` for version 2.0 (`--cart-ram-kib 128`). The largest items:
+`scripts/build.sh` reports `code=64664 mem=76140 audio=168` for version 2.0.1 (`--cart-ram-kib 128`). The largest items:
 
 | Item | Bytes | Notes |
 |---|---:|---|
@@ -102,8 +103,8 @@ A 320x200 buffer would take 64,000 of the 131,072 bytes of cartridge RAM. An 8-r
 | per-ray arrays | ~2,100 | bss |
 | object pools | ~1,900 | 20 enemies, 16 projectiles, 9 cats, 14 pickups, 6 puddles, 16 props |
 | map | 640 | bss; `tools/gen_levels.py` enforces w*h <= 640 |
-| **cartridge RAM** | **76,040** | of 131,072 (55,032 free) |
-| **store image** | **74,723** | of 131,072, with icon, screenshot and colophon |
+| **cartridge RAM** | **76,140** | of 131,072 (54,932 free) |
+| **store image** | **74,719** | of 131,072, with icon, screenshot and colophon |
 
 Version 1 had to fit 64 KiB and a QEMU load image of about 54.5 KB (the firmware then copied the whole image into one heap block). Current PRG32 firmware copies the payload straight from flash into the cartridge window, so that limit is gone; the remaining limits are the two in the table. The 2.0 growth is mostly art: textures went from 2.6 KB to 10.5 KB and Fed's portrait from three 24x24 to three 48x48 frames, while the AUDIO block shrank from 588 to 168 bytes (no PCM waves).
 
@@ -119,7 +120,9 @@ Version 1 had to fit 64 KiB and a QEMU load image of about 54.5 KB (the firmware
 | composition in cartridge code | ~5–7 ms (estimate) |
 | firmware indexed blit (216-colour palette mapping + pixel copy) | ~5 ms (estimate) |
 
-That is about 35–40 ms, or 25–30 fps. The frame is SPI-bound: the view size is what matters. The figure is an estimate from the host model and has **not yet been measured on hardware**. PRG32's performance-metrics firmware (`CONFIG_PRG32_METRICS_ENABLE`) is the tool to confirm it. If needed, the first knob is `VIEW_H` (fewer rows sent). `STRIP_H` is already 8 (fewer, larger blits, at 320 bytes of RAM per row). The 32x32 textures cost no extra time: each texel is still one lookup.
+That is about 35–40 ms, or 25–30 fps. The frame is SPI-bound: the view size is what matters. The figure is an estimate from the host model.
+
+**Measuring on a board.** `scripts/measure_hw.sh --slot cartN [--url http://board]` builds a `CC_MEASURE` cartridge (with `CC_TEST_GOD`), uploads it to that slot (overwriting it), starts it, waits, and reads the result from the PRG32 performance broker (`prg32 esp32c6 performance`), printing frames per second and mean, p95 and max frame time per level, with the draw and present shares. The JSON is kept in `build/measure/`. In this build the game plays each of the 12 levels by itself for 240 frames (walking, turning, sending cats, so enemies, cats and the band are all active). It records one broker case per level (`L01`..`L12`), timing update, draw, present and the whole frame with `prg32_perf_now_us()`, and shows the average and the worst level in the bands when it is done. In QEMU (`scripts/qemu_preview.py --script measure`) the run completes and reports 30.2 fps on every level, which only shows that the path works, because QEMU paces frames. Hardware numbers have not been recorded yet. If needed, the first knob is `VIEW_H` (fewer rows sent). `STRIP_H` is already 8 (fewer, larger blits, at 320 bytes of RAM per row). The 32x32 textures cost no extra time: each texel is still one lookup.
 
 QEMU presents only when the emulated panel refreshes, so the QEMU build (`CC_TARGET_QEMU`) sends one present per frame instead of presenting the status bar separately.
 
@@ -257,6 +260,10 @@ The game sets the mood every tick (`music_mood()` in `src/game.c`). The sequence
 
 Effects are 4-byte steps (instrument, note, volume, ticks) on voices 6–7. One-tick steps on the sustained SWEEP instrument give SID-style pitch slides (the cat's launch, the shield, the fall, boings). `sfx_at(id, x, y)` places an effect in the world: the pan follows the source's lateral offset in Fed's view and the volume falls with distance (`test_sfx_pan`); enemies, bosses and cats use it, while Fed's own sounds stay centred. Roach skittering and portal groans are the lowest priority and never interrupt another effect.
 
+### Level
+
+The firmware mixes eight voices without a limiter, so the cartridge sets the level. In 2.0 the band sat at −25.6 LUFS (integrated, QEMU stereo capture of the Store preview), below the other PRG32 games measured the same way (−18.8 to −28.5 LUFS), and the effects masked it. Since 2.0.1 every music note goes through `mvol()` in `src/audio.c` (+40%, about +3 dB, capped at 255), while effects keep their volumes. The new preview measures −21.3 LUFS with a −10.2 dBFS true peak, so there is headroom left and no clipping. These are digital levels. How loud it sounds from the board's speaker depends on the amplifier and the firmware's master volume, and has to be checked by ear.
+
 ## 9. Testing
 
 `tests/run_tests.sh` compiles `src/main.c` natively with AddressSanitizer and UndefinedBehaviorSanitizer against stub PRG32 calls, then runs:
@@ -278,6 +285,7 @@ Effects are 4-byte steps (instrument, note, volume, ticks) on voices 6–7. One-
 | portal sequence | `test_portal_needs_leaders`; `test_finale` (inside `test_progression`) plays the whole finale: reveal, nodes, Ralph's escape, anchors sealed until he is safe, the stabilizer surviving a single hit, the full volley, the cats' return, silence, then the victory blues |
 | adaptive music | `test_music`: moods for calm, alert and combat; changes only on bar lines; the leaders' health phases; the sad drop at the reveal |
 | cats alone can win | `test_cats_can_win`: a bot clears all 12 levels, finale included, using only A (it goes back for dazed cats, as a player would) |
+| point-blank enemies stay readable | `test_point_blank`: a roach and a beetle 0.47 tiles away, left, centre and right: height capped, width bounded, still on their side |
 | rendering | `test_render_smoke`, plus the soak's frequent draws under the sanitizers |
 | robustness | `test_soak`: random input on every level |
 
@@ -285,7 +293,7 @@ The tests are deterministic: `CC_SEED=n build/test_game` replays them with anoth
 
 `tests/run_tests.sh shots` saves every screen as PNG from the host framebuffer, which is pixel-identical to the cartridge's strips. `scripts/qemu_preview.py` runs the real cartridge on the PRG32 QEMU firmware with scripted input (stereo audio switched on in the firmware's setup menu first) and saves framebuffer dumps, the audio stream and, with `--video`, an MP4.
 
-The Store preview (`assets/preview.mp4`, 60 s, 640x400) is cut from two QEMU recordings: 42 s of the release cartridge (title, story, the front yard) with the `preview` script, then 18 s of the portal level with the `portal` script, recorded from a build whose wrapper sets `CC_START_LEVEL 11` and `CC_TEST_GOD 1`. Every frame and sample comes from QEMU.
+The Store preview (`assets/preview.mp4`, 60 s, 640x400) is cut from two QEMU recordings: 34 s of the release cartridge (title, story, the front yard) with the `preview` script, then 26 s of the portal level, enemies at point blank included, with the `portal` script, recorded from a build whose wrapper sets `CC_START_LEVEL 11` and `CC_TEST_GOD 1`. Every frame and sample comes from QEMU.
 
 ## 10. Platform notes
 

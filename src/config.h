@@ -29,6 +29,9 @@
 #ifndef CC_TEST_GOD
 #define CC_TEST_GOD 0 /* Fed cannot lose health */
 #endif
+#ifndef CC_MEASURE
+#define CC_MEASURE 0 /* hardware frame-time benchmark (scripts/measure_hw.sh) */
+#endif
 #ifndef CC_HOST
 #define CC_HOST 0 /* native host build for tests (uses the host libc) */
 #endif
@@ -51,6 +54,10 @@
 #define FOCAL 242
 #define WALL_S 200
 #define FOV_UNITS 190 /* the field of view in 1/1024 turn */
+/* Billboards closer than NEAR_DEPTH (Q8) are drawn as if at NEAR_DEPTH, and
+ * no billboard is drawn taller than MAX_SPRITE_H pixels. */
+#define NEAR_DEPTH 308
+#define MAX_SPRITE_H 168
 
 /* Fixed-step simulation: 30 logic ticks per second, whatever the frame rate. */
 #define TICK_MS 33
